@@ -1,11 +1,19 @@
 import React from "react";
-import Card from "../../components/admin/Card";
-import FilterButton from "../../components/admin/FilterButton";
-import ExportButton from "../../components/admin/ExportButton";
-import Table from "../../components/admin/Table";
+import Card from "../components/admin/Card";
+import FilterButton from "../components/admin/FilterButton";
+import ExportButton from "../components/admin/ExportButton";
+import Table from "../components/admin/Table";
+import { useAuth } from "../hooks/useAuth";
 
 
 function DashboardPage() {
+  const { data: user, isLoading, isError } = useAuth();
+
+  if (isLoading) return <div>Loading user...</div>;
+  if (isError || !user) return <div>Failed to load user</div>;
+
+  console.log("User data:", user);
+      
   return (
     <>
       <div className="p-5 sm:p-10 md:p-15 lg:p-20 xl:p-25 min-h-screen">
@@ -43,3 +51,4 @@ function DashboardPage() {
 }
 
 export default DashboardPage;
+
