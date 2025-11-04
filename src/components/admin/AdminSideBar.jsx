@@ -11,15 +11,25 @@ import {
   ClipboardList,
   BrickWall,
   CreditCard,
-  LogOut,
 } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router";
+import { useAuth } from "../../hooks/useAuth";
 import { NavLink } from "react-router-dom";
 
 const AdminSideBar = () => {
   const [openApplicants, setOpenApplicants] = useState(false);
   const [openTrainings, setOpenTrainings] = useState(false);
   const [openAssessments, setOpenAssessments] = useState(false);
+
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/auth/login");
+  };
+
   return (
     <div className="h-screen">
       <div className="h-full w-full max-w-[100px] sm:max-w-[200px] md:max-w-[200px] lg:max-w-[300px] flex flex-col gap-6 text-[#2E99B0] border-r-2 border-gray-300 shadow-2xl py-6 px-4 sm:px-6 items-center sm:items-start">
@@ -42,17 +52,29 @@ const AdminSideBar = () => {
         </div>
 
         {/* Dashboard */}
-        <div className="flex items-center gap-2 mt-10">
-          <LayoutDashboard className="h-5 w-5" />
-          <span className="text-[#2E99B0] font-bold text-sm sm:text-base hidden sm:inline">
-            Dashboard
-          </span>
+        <div className="flex items-center gap-3 mt-10">
+          <NavLink
+            to="/admin/dashboard"
+            replace
+            className={({ isActive, isPending }) =>
+              `flex items-center gap-2 px-3 py-2 rounded-md transition-colors ${
+                isPending
+                  ? "text-gray-400"
+                  : isActive
+                  ? "bg-[#E0F7FA] text-[#2E99B0] font-bold"
+                  : "text-gray-600 hover:bg-gray-100"
+              }`
+            }
+          >
+            <LayoutDashboard className="h-5 w-5" />
+            <span className="text-lg">Dashboard</span>
+          </NavLink>
         </div>
 
-        {/* Section: Applicants */}
+        {/* Applicants */}
         <div
           onClick={() => setOpenApplicants(!openApplicants)}
-          className="flex items-center  justify-center sm:justify-between w-full cursor-pointer"
+          className="flex items-center justify-center sm:justify-between w-full cursor-pointer"
         >
           <div className="flex items-center gap-2">
             <User className="h-5 w-5" />
@@ -66,160 +88,106 @@ const AdminSideBar = () => {
             <ChevronDown className="h-5 w-5 hidden sm:inline" />
           )}
         </div>
-        {openApplicants && (
-          <div className="flex flex-col gap-2 sm:pl-6 pl-2">
-            <div className="flex items-center gap-2">
-              <Layers2 className="h-4 w-4" />
-              <span className="text-sm">Tests</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <NotepadText className="h-4 w-4" />
-              <span className="text-sm">Results</span>
 
-            {/* Animated Submenu */}
-            <div
-              className={`transition-all duration-300 ease-in-out overflow-hidden ${
-                openApplicants
-                  ? "max-h-[500px] opacity-100"
-                  : "max-h-0 opacity-0"
-              } flex flex-col gap-2 sm:pl-6`}
-            >
-              <div className="flex justify-center sm:items-center gap-2">
-                <Layers2 className="h-4 w-4 hidden sm:flex lg:h-5 lg:w-5" />
-                <span className="text-sm lg:text-md mt-2 sm:mt-0">Tests</span>
-              </div>
-              <div className="flex justify-center sm:items-center gap-2 sm:ml-2">
-                <NotepadText className="h-4 w-4 hidden sm:flex lg:h-5 lg:w-5" />
-                <span className="text-sm lg:text-md">Results</span>
-              </div>
-            </div>
+        <div
+          className={`transition-all duration-300 ease-in-out overflow-hidden ${
+            openApplicants ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
+          } flex flex-col gap-2 sm:pl-6`}
+        >
+          <div className="flex items-center gap-2">
+            <Layers2 className="h-4 w-4" />
+            <span className="text-sm">Tests</span>
           </div>
-        )}
+          <div className="flex items-center gap-2">
+            <NotepadText className="h-4 w-4" />
+            <span className="text-sm">Results</span>
+          </div>
+        </div>
 
-        {/* Section: Trainings */}
+        {/* Trainings */}
         <div
           onClick={() => setOpenTrainings(!openTrainings)}
           className="flex items-center justify-center sm:justify-between w-full cursor-pointer"
         >
           <div className="flex items-center gap-2">
             <Captions className="h-5 w-5" />
-            <span className="text-[#2E99B0] font-bold text-sm sm:text-base  hidden sm:inline">
+            <span className="text-[#2E99B0] font-bold text-sm sm:text-base hidden sm:inline">
               Trainings
             </span>
           </div>
           {openTrainings ? (
-            <ChevronUp className="h-5 w-5  hidden sm:inline" />
+            <ChevronUp className="h-5 w-5 hidden sm:inline" />
           ) : (
-            <ChevronDown className="h-5 w-5  hidden sm:inline" />
+            <ChevronDown className="h-5 w-5 hidden sm:inline" />
           )}
         </div>
-        {openTrainings && (
-          <div className="flex flex-col gap-2 sm:pl-6 pl-2">
-            <div className="flex items-center gap-2">
-              <Package className="h-4 w-4" />
-              <span className="text-sm">Modules</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <NotepadText className="h-4 w-4" />
-              <span className="text-sm">Tests</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <ArrowUpNarrowWide className="h-4 w-4" />
-              <span className="text-sm">Progress</span>
 
-            {/* Animated Submenu */}
-            <div
-              className={`transition-all duration-300 ease-in-out overflow-hidden ${
-                openTrainings
-                  ? "max-h-[500px] opacity-100"
-                  : "max-h-0 opacity-0"
-              } flex flex-col gap-2 sm:pl-6`}
-            >
-              <div className="flex justify-center sm:items-center gap-2">
-                <Package className="h-4 w-4 hidden sm:flex lg:h-5 lg:w-5" />
-                <span className="text-sm lg:text-md mt-2 sm:mt-0">Modules</span>
-              </div>
-              <div className="flex justify-center sm:items-center gap-2">
-                <NotepadText className="h-4 w-4 hidden sm:flex lg:h-5 lg:w-5" />
-                <span className="text-sm  lg:text-md">Tests</span>
-              </div>
-              <div className="flex justify-center sm:items-center gap-2">
-                <ArrowUpNarrowWide className="h-4 w-4 hidden sm:flex lg:h-5 lg:w-5" />
-                <span className="text-sm  lg:text-md">Progress</span>
-              </div>
-            </div>
+        <div
+          className={`transition-all duration-300 ease-in-out overflow-hidden ${
+            openTrainings ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
+          } flex flex-col gap-2 sm:pl-6`}
+        >
+          <div className="flex items-center gap-2">
+            <Package className="h-4 w-4" />
+            <span className="text-sm">Modules</span>
           </div>
-        )}
+          <div className="flex items-center gap-2">
+            <NotepadText className="h-4 w-4" />
+            <span className="text-sm">Tests</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <ArrowUpNarrowWide className="h-4 w-4" />
+            <span className="text-sm">Progress</span>
+          </div>
+        </div>
 
-        {/* Section: Assessments */}
+        {/* Assessments */}
         <div
           onClick={() => setOpenAssessments(!openAssessments)}
           className="flex items-center justify-center sm:justify-between w-full cursor-pointer"
         >
           <div className="flex items-center gap-2">
             <ClipboardList className="h-5 w-5" />
-            <span className="text-[#2E99B0] font-bold text-sm sm:text-base  hidden sm:inline">
+            <span className="text-[#2E99B0] font-bold text-sm sm:text-base hidden sm:inline">
               Assessments
             </span>
           </div>
           {openAssessments ? (
-            <ChevronUp className="h-5 w-5  hidden sm:inline" />
+            <ChevronUp className="h-5 w-5 hidden sm:inline" />
           ) : (
-            <ChevronDown className="h-5 w-5  hidden sm:inline" />
+            <ChevronDown className="h-5 w-5 hidden sm:inline" />
           )}
         </div>
-        {openAssessments && (
-          <div className="flex flex-col gap-2 sm:pl-6 pl-2">
-            <div className="flex items-center gap-2">
-              <CreditCard className="h-4 w-4" />
-              <span className="text-sm">Test Bank</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <BrickWall className="h-4 w-4" />
-              <span className="text-sm">Test Builder</span>
 
-            {/* Animated Submenu */}
-            <div
-              className={`transition-all duration-300 ease-in-out overflow-hidden ${
-                openAssessments
-                  ? "max-h-[500px] opacity-100 translate-y-0"
-                  : "max-h-0 opacity-0 -translate-y-2"
-              } flex flex-col gap-2 sm:pl-6`}
-            >
-              <div className="flex justify-center sm:items-center gap-2">
-                <CreditCard className="h-4 w-4 hidden sm:flex lg:h-5 lg:w-5" />
-                <span className="text-sm lg:text-l mt-2 sm:mt-0">
-                  Test Bank
-                </span>
-              </div>
-              <div className="flex sm:items-center ml-3 sm:ml-0 gap-2">
-                <BrickWall className="h-4 w-4 hidden sm:flex lg:h-5 lg:w-5" />
-                <span className="text-sm lg:text-md">Test Builder</span>
-              </div>
-            </div>
+        <div
+          className={`transition-all duration-300 ease-in-out overflow-hidden ${
+            openAssessments
+              ? "max-h-[500px] opacity-100 translate-y-0"
+              : "max-h-0 opacity-0 -translate-y-2"
+          } flex flex-col gap-2 sm:pl-6`}
+        >
+          <div className="flex items-center gap-2">
+            <CreditCard className="h-4 w-4" />
+            <span className="text-sm">Test Bank</span>
           </div>
-        )}
+          <div className="flex items-center gap-2">
+            <BrickWall className="h-4 w-4" />
+            <span className="text-sm">Test Builder</span>
+          </div>
+        </div>
 
-        {/* Footer */}
-        <div className="mt-auto  w-full flex items-center justify-center sm:justify-between bg-[#2E99B0] rounded-xl px-4 py-3">
-          <LogOut
-            className="h-5 w-5 text-white sm:hidden"
-            onClick={() => console.log("Logout clicked")}
-          />
-          <div className="hidden sm:flex items-center gap-3">
-            <img src="/assets/Logo.png" alt="SuiteTest Logo" className="h-5" />
-            <span className="text-white text-sm lg:ml-25">Logout</span>
-            <button>
-              <img
-                src="/assets/Launchpad.png"
-                alt="Rocket Logo"
-                className="h-5"
-              />
-            </button>
+        {/* Logout */}
+        <div
+          className="w-[23%] h-[7%] rounded-xl bg-[#2E99B0] px-2 py-6 flex items-center gap-1 mt-25 fixed bottom-10 cursor-pointer"
+          onClick={handleLogout}
+        >
+          <div className="ml-5">
+            <img src="/assets/Logo.png" alt="Logo" />
           </div>
         </div>
       </div>
     </div>
   );
 };
+
 export default AdminSideBar;
