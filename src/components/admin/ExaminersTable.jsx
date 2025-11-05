@@ -36,7 +36,7 @@ function stableSort(array, comparator) {
   return stabilized.map((el) => el[0]);
 }
 
-function CandidateTable({ candidates, headerCells, columns, tableName }) {
+function CandidateTable({ candidates = [], headerCells = [], columns = [], tableName= '' }) {
   const [order, setOrder] = useState("asc");
   const [orderBy, setOrderBy] = useState("id");
   const [page, setPage] = useState(0);
@@ -63,7 +63,14 @@ function CandidateTable({ candidates, headerCells, columns, tableName }) {
     page * rowsPerPage + rowsPerPage
   );
 
+  if(!candidates || candidates.length === 0){
+    return <div className="flex justify-center items-center">
+      No Data!
+    </div>
+  }
+
   return (
+    <div className="min-w-[350px] sm:min-w-0">
     <Paper 
       elevation={0} 
       sx={{ 
@@ -173,6 +180,7 @@ function CandidateTable({ candidates, headerCells, columns, tableName }) {
         }}
       />
     </Paper>
+    </div>
   );
 }
 

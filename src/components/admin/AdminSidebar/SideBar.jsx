@@ -104,7 +104,7 @@ const AdminSidebar = () => {
         )}
 
         <SidebarLink
-          to="/admin/assessments"
+          to="/admin/assesments"
           label="Assessments"
           icon={(active) => (
             <ClipboardList
