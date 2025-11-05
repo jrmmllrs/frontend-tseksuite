@@ -1,7 +1,7 @@
 
 import Card from "../../components/admin/Card";
 import { useAuth } from "../../hooks/useAuth";
-import { useMediaQuery } from "@mui/material";
+import { useMediaQuery, CircularProgress } from "@mui/material";
 import MobileScrollableCards from "../../components/admin/MobileScrollableCards"
 import CandidateTable from "../../components/admin/ExaminersTable";
 import toast from "react-hot-toast";
@@ -38,9 +38,6 @@ function DashboardPage() {
       const rawData = res.data.data;
 
       const formatted = rawData.map(transformExaminer);
-
-      console.log("Raw Data", rawData);
-      console.log("Formatted Data", formatted);
 
       setData(formatted);
 
@@ -89,7 +86,16 @@ function DashboardPage() {
           <Card />
         </div>
 
+        {isDataLoading && (
+          <div className="flex flex-col items-center justify-center gap-3">
+            <CircularProgress />
+            <h6>Fetching Data ...</h6>
+          </div>
+        )}
+
         {data.length === 0 ? (
+
+          // Baguhin ito ng iisang no data screen.
           <div className="flex flex-col items-center justify-center py-16 text-center">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -119,9 +125,7 @@ function DashboardPage() {
               {isMobile ? (
                 <MobileScrollableCards candidates={data}/>
               ) : (
-                <div className="min-w-[350px] sm:min-w-0">
                   <CandidateTable candidates={data} headerCells={headerCells} columns={columns} tableName={'Examiners'}/>
-                </div>
               )}
           </div>
           )

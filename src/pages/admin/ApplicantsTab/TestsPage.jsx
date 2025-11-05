@@ -1,11 +1,12 @@
 import Table from "../../../components/admin/Table";
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { Search } from "lucide-react";
 import { Filter } from "lucide-react";
 
 
 
 function TestsPage() {
+  
   return (
     <div className='h-screen w-full px-3 sm:px-6 md:px-8 py-6'>
       <div className='mb-20'>

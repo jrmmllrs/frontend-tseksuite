@@ -30,10 +30,10 @@ function App() {
         {/* /admin protected routes */}
         <Route element={<AdminProtectedRoutes />}>
           <Route path="admin" element={<MainLayout />}>
-            <Route path="dashboard" element={<DashboardPage />} />
-            <Route path="applicants" element={<TestPage />} />
+            <Route index path="dashboard" element={<DashboardPage />} />
+            <Route path="examiners" element={<TestPage />} />
             {/* added results route */}
-            <Route path="applicants/results" element={<ResultsPage />} />
+            <Route path="examiner/results" element={<ResultsPage />} />
             <Route path="trainings" element={<ComingSoon />} />
             <Route path="assesments" element={<TestBankPage />} />
             {/*  */}
