@@ -12,13 +12,40 @@ const ApplicantOnboardingPage = () => {
   const [isValidating, setIsValidating] = useState(true);
   const [inviteData, setInviteData] = useState(null);
   const [error, setError] = useState(null);
+  const [departments, setDepartments] = useState([]);
+  const [isLoadingDepts, setIsLoadingDepts] = useState(true);
 
   const navigate = useNavigate();
   const { token } = useParams();
 
   useEffect(() => {
     validateInviteToken();
+    fetchDepartments();
   }, [token]);
+
+  const fetchDepartments = async () => {
+    try {
+      setIsLoadingDepts(true);
+      const response = await fetch('http://localhost:3000/api/department/get');
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch departments');
+      }
+
+      const result = await response.json();
+      console.log('Departments fetched:', result);
+      
+      // Filter only active departments
+      const activeDepartments = result.data.filter(dept => dept.is_active);
+      setDepartments(activeDepartments);
+    } catch (err) {
+      console.error('Error fetching departments:', err);
+      // Set fallback departments if API fails
+      setDepartments([]);
+    } finally {
+      setIsLoadingDepts(false);
+    }
+  };
 
   const validateInviteToken = async () => {
     if (!token) {
@@ -294,20 +321,17 @@ const ApplicantOnboardingPage = () => {
                     name="department"
                     value={formData.department}
                     onChange={handleChange}
-                    disabled={inviteData?.dept_id ? true : false}
+                    disabled={inviteData?.dept_id || isLoadingDepts}
                     className="w-full px-3 py-2.5 text-sm sm:text-base border border-gray-300 rounded-md bg-white text-gray-700 font-['Poppins'] pr-10 disabled:bg-gray-100 disabled:cursor-not-allowed focus:outline-none focus:ring-1 focus:ring-cyan-500"
                   >
-                    <option value="">Select department</option>
-                    <option value="60">Engineering</option>
-                    <option value="64">Human Resources</option>
-                    <option value="62">Finance</option>
-                    <option value="61">Business Operations</option>
-                    <option value="63">Marketing</option>
-                    <option value="65">IT Support</option>
-                    <option value="66">Design</option>
-                    <option value="67">Legal</option>
-                    <option value="68">Customer Service</option>
-                    <option value="69">Product Management</option>
+                    <option value="">
+                      {isLoadingDepts ? "Loading departments..." : "Select department"}
+                    </option>
+                    {departments.map((dept) => (
+                      <option key={dept.dept_id} value={dept.dept_id}>
+                        {dept.dept_name}
+                      </option>
+                    ))}
                   </select>
                   {inviteData?.dept_id ? (
                     <p className="text-xs text-gray-500 mt-1">
