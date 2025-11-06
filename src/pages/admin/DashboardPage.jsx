@@ -125,7 +125,12 @@ function DashboardPage() {
               {isMobile ? (
                 <MobileScrollableCards candidates={data}/>
               ) : (
-                  <CandidateTable candidates={data} headerCells={headerCells} columns={columns} tableName={'Examiners'}/>
+                  <CandidateTable 
+                  candidates={data} 
+                  headerCells={headerCells} 
+                  columns={columns} 
+                  tableName={'Examiners'}
+                  />
               )}
           </div>
           )
