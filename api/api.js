@@ -39,6 +39,7 @@ export const getAllResults = async() => {
         if(!res) {console.log('Error, API')}
 
         const formatted = res.data.data.map(transformResult);
+        console.log(res.data.data)
         
         return formatted
 
