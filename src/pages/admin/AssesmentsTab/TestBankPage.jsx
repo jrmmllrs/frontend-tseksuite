@@ -148,7 +148,7 @@ const TestBankPage = () => {
       {/* Header */}
       <div className="mb-6 lg:mb-8">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
-          <h1 className="text-[#2E99B0] text-md md:text-xl lg:text-2xl xl:text-3xl font-['Poppins']">
+          <h1 className="text-[#2E99B0] text-md md:text-xl lg:text-2xl xl:text-3xl">
             Departments
           </h1>
           <button

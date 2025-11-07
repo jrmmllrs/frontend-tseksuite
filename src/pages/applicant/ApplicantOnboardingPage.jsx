@@ -224,7 +224,7 @@ const ApplicantOnboardingPage = () => {
 
   return (
     <div
-      className="min-h-screen bg-gray-50 flex flex-col font-['Poppins']"
+      className="min-h-screen bg-gray-50 flex flex-col "
       style={{ fontFamily: "Poppins, sans-serif" }}
     >
       <div className="flex-1 flex items-center justify-center px-4 py-8 sm:py-12">
@@ -282,7 +282,7 @@ const ApplicantOnboardingPage = () => {
                     value={formData.firstName}
                     onChange={handleChange}
                     disabled={isSubmitting}
-                    className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-md mb-2.5 focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:border-cyan-500 placeholder-gray-400 font-['Poppins'] disabled:bg-gray-100"
+                    className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-md mb-2.5 focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:border-cyan-500 placeholder-gray-400 disabled:bg-gray-100"
                   />
                   <input
                     type="text"
@@ -291,7 +291,7 @@ const ApplicantOnboardingPage = () => {
                     value={formData.lastName}
                     onChange={handleChange}
                     disabled={isSubmitting}
-                    className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:border-cyan-500 placeholder-gray-400 font-['Poppins'] disabled:bg-gray-100"
+                    className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:border-cyan-500 placeholder-gray-400 disabled:bg-gray-100"
                   />
                 </div>
 
@@ -306,7 +306,7 @@ const ApplicantOnboardingPage = () => {
                     value={formData.email}
                     onChange={handleChange}
                     disabled={true}
-                    className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-md focus:outline-none bg-gray-100 text-gray-600 placeholder-gray-400 font-['Poppins'] cursor-not-allowed"
+                    className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-md focus:outline-none bg-gray-100 text-gray-600 placeholder-gray-400 cursor-not-allowed"
                   />
                   <p className="text-xs text-gray-500 mt-1">
                     Email cannot be changed (from invitation)
@@ -322,7 +322,7 @@ const ApplicantOnboardingPage = () => {
                     value={formData.department}
                     onChange={handleChange}
                     disabled={inviteData?.dept_id || isLoadingDepts}
-                    className="w-full px-3 py-2.5 text-sm sm:text-base border border-gray-300 rounded-md bg-white text-gray-700 font-['Poppins'] pr-10 disabled:bg-gray-100 disabled:cursor-not-allowed focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                    className="w-full px-3 py-2.5 text-sm sm:text-base border border-gray-300 rounded-md bg-white text-gray-700 pr-10 disabled:bg-gray-100 disabled:cursor-not-allowed focus:outline-none focus:ring-1 focus:ring-cyan-500"
                   >
                     <option value="">
                       {isLoadingDepts ? "Loading departments..." : "Select department"}

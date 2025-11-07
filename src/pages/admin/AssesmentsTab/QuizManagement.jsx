@@ -190,7 +190,7 @@ const QuizManagement = ({ department, onBack }) => {
         <div className="mb-8">
           <div className="flex justify-between items-start mb-2">
             <div>
-              <h1 className="text-3xl text-[#2E99B0] mb-1 font-['Poppins']">
+              <h1 className="text-3xl text-[#2E99B0] mb-1">
                 {department.dept_name}
               </h1>
             </div>
@@ -205,7 +205,7 @@ const QuizManagement = ({ department, onBack }) => {
         </div>
 
         <div className="mb-6">
-          <h2 className="text-lg text-gray-700 font-['Poppins']">Quizzes</h2>
+          <h2 className="text-lg text-gray-700 ">Quizzes</h2>
         </div>
 
         {error && (
@@ -239,7 +239,7 @@ const QuizManagement = ({ department, onBack }) => {
               >
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
-                    <h3 className="text-lg font-['Poppins'] text-[#2E99B0] mb-1">
+                    <h3 className="text-lg text-[#2E99B0] mb-1">
                       {quiz.quiz_name}
                     </h3>
                   </div>
