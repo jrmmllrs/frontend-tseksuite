@@ -298,7 +298,7 @@ const ApplicantOnboardingPage = () => {
                     className="w-full px-3 py-2.5 text-sm sm:text-base border border-gray-300 rounded-md bg-white text-gray-700 font-['Poppins'] pr-10 disabled:bg-gray-100 disabled:cursor-not-allowed focus:outline-none focus:ring-1 focus:ring-cyan-500"
                   >
                     <option value="">Select department</option>
-                    <option value="60">Engineering</option>
+                    <option value="">Engineering</option>
                     <option value="64">Human Resources</option>
                     <option value="62">Finance</option>
                     <option value="61">Business Operations</option>
