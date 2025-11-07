@@ -17,9 +17,13 @@ const TestBankPage = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  //deactivate modal
+  const [showDeactivateModal, setShowDeactivateModal] = useState(false);
   const [newDeptName, setNewDeptName] = useState("");
   const [editingDept, setEditingDept] = useState(null);
   const [deletingDept, setDeletingDept] = useState(null);
+  //deactivate
+  const [deactivateDept, setDeactivateDept] = useState(null);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterActive, setFilterActive] = useState("all");
@@ -53,6 +57,7 @@ const TestBankPage = () => {
     }
   };
 
+  //deactivate
   const toggleActiveStatus = async (dept) => {
     try {
       await axios.patch(
@@ -424,13 +429,13 @@ const TestBankPage = () => {
                 }`}
               >
                 {/* Active Status Indicator */}
-                <div
+                {/* <div
                   className={`absolute top-0 right-0 w-16 h-16 lg:w-20 lg:h-20 ${
                     dept.is_active
                       ? "bg-cyan-500"
                       : "bg-gradient-to-br from-gray-300 to-gray-400"
                   } rounded-bl-full opacity-20`}
-                ></div>
+                ></div> */}
 
                 {/* Menu Button */}
                 <div className="absolute top-3 right-3 lg:top-4 lg:right-4 z-10">
@@ -447,21 +452,23 @@ const TestBankPage = () => {
                   </button>
                   {openMenuId === dept.dept_id && (
                     <div className="absolute right-0 mt-1 lg:mt-2 w-44 lg:w-48 bg-white rounded-xl shadow-2xl border border-gray-200 py-2 z-20">
+                      {/* adjusted deactivate/activate button */}
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleActiveStatus(dept);
-                          setOpenMenuId(null);
-                        }}
-                        className={`flex items-center gap-3 w-full px-3 lg:px-4 py-2 text-sm text-left transition-colors ${
-                          dept.is_active
-                            ? "text-orange-600 hover:bg-orange-50"
-                            : "text-green-600 hover:bg-green-50"
-                        }`}
-                      >
-                        <Power size={16} />
-                        {dept.is_active ? "Deactivate" : "Activate"}
-                      </button>
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeactivateDept(dept);
+                            setShowDeactivateModal(true);
+                            setOpenMenuId(null);
+                          }}
+                          className={`flex items-center gap-3 w-full px-3 lg:px-4 py-2 text-sm text-left transition-colors ${
+                            dept.is_active
+                              ? "text-orange-600 hover:bg-orange-50"
+                              : "text-green-600 hover:bg-green-50"
+                          }`}
+                        >
+                          <Power size={16} />
+                          {dept.is_active ? "Deactivate" : "Activate"}
+                        </button>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -511,8 +518,8 @@ const TestBankPage = () => {
 
                 {/* Department Name */}
                 <h3
-                  className={`text-base lg:text-lg font-semibold text-center ${
-                    dept.is_active ? "text-gray-800" : "text-gray-500"
+                  className={`text-base lg:text-lg text-center ${
+                    dept.is_active ? "text-[#2E99B0] " : "text-gray-500"
                   }`}
                 >
                   {dept.dept_name}
@@ -563,7 +570,7 @@ const TestBankPage = () => {
 
       {/* Edit Modal */}
       {showEditModal && editingDept && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+        <div className="fixed inset-0 bg-blur bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl p-6 lg:p-8 max-w-md w-full mx-4 shadow-2xl transform animate-in zoom-in-95 duration-200">
             <h2 className="text-xl lg:text-2xl font-bold text-gray-900 mb-4 lg:mb-6">
               Edit Department
@@ -603,7 +610,7 @@ const TestBankPage = () => {
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && deletingDept && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+        <div className="fixed inset-0 bg-blur bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl p-6 lg:p-8 max-w-md w-full mx-4 shadow-2xl transform animate-in zoom-in-95 duration-200">
             <div className="w-12 h-12 lg:w-16 lg:h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Trash2 size={24} className="text-red-600" />
@@ -638,6 +645,61 @@ const TestBankPage = () => {
           </div>
         </div>
       )}
+
+{/* Deactivate Confirmation Modal */}
+{showDeactivateModal && deactivateDept && (
+  <div className="fixed inset-0 bg-blur bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+    <div className="bg-white rounded-2xl p-6 lg:p-8 max-w-md w-full mx-4 shadow-2xl transform animate-in zoom-in-95 duration-200">
+      <div className="w-12 h-12 lg:w-16 lg:h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+        <Power size={24} className="text-orange-600" />
+      </div>
+      <h2 className="text-xl lg:text-2xl font-bold text-gray-900 mb-3 text-center">
+        {deactivateDept.is_active ? "Deactivate Department" : "Activate Department"}
+      </h2>
+      <p className="text-gray-600 text-sm lg:text-base mb-4 lg:mb-6 text-center">
+        Are you sure you want to {deactivateDept.is_active ? "deactivate" : "activate"}{" "}
+        <strong className="text-gray-900">{deactivateDept.dept_name}</strong>?
+      </p>
+      <div className="flex flex-col sm:flex-row gap-3">
+        <button
+          onClick={() => {
+            // just close modal, no toggling
+            setShowDeactivateModal(false);
+            setDeactivateDept(null);
+          }}
+          className="flex-1 px-4 py-3 text-sm lg:text-base text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors font-medium"
+        >
+          Cancel
+        </button>
+
+        <button
+          onClick={async (e) => {
+            e.stopPropagation();
+            // Call the toggle function only when user confirms
+            try {
+              await toggleActiveStatus(deactivateDept);
+            } catch (err) {
+              // toggleActiveStatus already sets error; you can optionally handle UI here
+              console.error("Failed to toggle status:", err);
+            } finally {
+              setShowDeactivateModal(false);
+              setDeactivateDept(null);
+            }
+          }}
+          className={`flex-1 px-4 py-3 text-sm lg:text-base ${
+            deactivateDept.is_active
+              ? "bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
+              : "bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700"
+          } text-white rounded-xl transition-all font-medium shadow-lg hover:shadow-xl`}
+        >
+          {deactivateDept.is_active ? "Deactivate" : "Activate"}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+
     </div>
   );
 };
