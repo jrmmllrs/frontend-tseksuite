@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import ClockIcon from "../../assets/Clock.svg";
-import CorrectIcon from "../../assets/Correct.svg";
-import WrongIcon from "../../assets/Wrong.svg";
 import Footer from "../../components/applicant/Footer";
 
 const TestPage = () => {
@@ -10,7 +8,7 @@ const TestPage = () => {
   const location = useLocation();
 
   const [selectedAnswer, setSelectedAnswer] = useState(null);
-  const [selectedAnswers, setSelectedAnswers] = useState([]); // For checkbox questions
+  const [selectedAnswers, setSelectedAnswers] = useState([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [questions, setQuestions] = useState([]);
@@ -20,7 +18,6 @@ const TestPage = () => {
 
   const API_BASE_URL = "http://localhost:3000/api";
 
-  // Initialize quiz data and fetch questions
   useEffect(() => {
     const selectedQuiz = location.state?.quizData || 
       JSON.parse(localStorage.getItem("selectedQuiz") || "null");
@@ -35,11 +32,10 @@ const TestPage = () => {
     }
 
     setQuizData(selectedQuiz);
-    setTimeRemaining(selectedQuiz.time_limit * 60); // Convert minutes to seconds
+    setTimeRemaining(selectedQuiz.time_limit * 60);
     fetchQuestions(selectedQuiz.quiz_id);
   }, []);
 
-  // Timer countdown
   useEffect(() => {
     if (timeRemaining <= 0 || loading) return;
 
@@ -61,7 +57,6 @@ const TestPage = () => {
     try {
       setLoading(true);
       
-      // Fetch questions
       const questionsResponse = await fetch(
         `${API_BASE_URL}/question/get/${quizId}`
       );
@@ -73,12 +68,13 @@ const TestPage = () => {
       const questionsResult = await questionsResponse.json();
       const questionsData = questionsResult.data || [];
 
-      // Fetch options for each question
+      // IMPORTANT: Use /test/ endpoint to get options WITHOUT is_correct
       const questionsWithOptions = await Promise.all(
         questionsData.map(async (question) => {
           try {
+            // CHANGED: Use secure endpoint that doesn't expose correct answers
             const optionsResponse = await fetch(
-              `${API_BASE_URL}/answer/get/${question.question_id}`
+              `${API_BASE_URL}/answer/test/${question.question_id}`
             );
             
             if (!optionsResponse.ok) {
@@ -93,7 +89,7 @@ const TestPage = () => {
               options: options.map((opt) => ({
                 answer_id: opt.answer_id,
                 option_text: opt.option_text,
-                is_correct: opt.is_correct,
+                // is_correct is NOT included - security fix
               })),
             };
           } catch (err) {
@@ -104,8 +100,6 @@ const TestPage = () => {
       );
 
       setQuestions(questionsWithOptions);
-      
-      // Initialize userAnswers array
       setUserAnswers(new Array(questionsWithOptions.length).fill(null));
       
     } catch (error) {
@@ -132,7 +126,6 @@ const TestPage = () => {
     const currentQuestion = questions[currentQuestionIndex];
     
     if (currentQuestion.question_type === "CB") {
-      // Checkbox - multiple selection
       setSelectedAnswers((prev) => {
         if (prev.includes(answerId)) {
           return prev.filter((id) => id !== answerId);
@@ -141,7 +134,6 @@ const TestPage = () => {
         }
       });
     } else {
-      // Single selection (MC, TF)
       setSelectedAnswer(answerId);
     }
   };
@@ -149,22 +141,18 @@ const TestPage = () => {
   const handleNext = () => {
     const currentQuestion = questions[currentQuestionIndex];
     
-    // Validate answer selection
     if (currentQuestion.question_type === "CB") {
       if (selectedAnswers.length === 0) {
         alert("Please select at least one answer");
         return;
       }
-    } else if (currentQuestion.question_type === "DESC") {
-      // For descriptive, we can allow empty for now
-    } else {
+    } else if (currentQuestion.question_type !== "DESC") {
       if (selectedAnswer === null) {
         alert("Please select an answer");
         return;
       }
     }
 
-    // Save the answer
     const newUserAnswers = [...userAnswers];
     if (currentQuestion.question_type === "CB") {
       newUserAnswers[currentQuestionIndex] = selectedAnswers;
@@ -173,7 +161,6 @@ const TestPage = () => {
     }
     setUserAnswers(newUserAnswers);
 
-    // Move to next question or submit
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
       setSelectedAnswer(null);
@@ -183,52 +170,50 @@ const TestPage = () => {
     }
   };
 
-  const submitTest = (answers = userAnswers) => {
-    // Calculate score
-    let score = 0;
-    let totalPoints = 0;
+  const submitTest = async (answers = userAnswers) => {
+    try {
+      // Prepare submission data
+      const submissionData = {
+        quiz_id: quizData.quiz_id,
+        answers: answers.map((answer, index) => ({
+          question_id: questions[index].question_id,
+          answer: answer, // Can be single ID, array of IDs, or text
+          question_type: questions[index].question_type
+        }))
+      };
 
-    questions.forEach((question, index) => {
-      totalPoints += question.points;
-      const userAnswer = answers[index];
+      // Send to backend for scoring
+      const response = await fetch(`${API_BASE_URL}/result/submit`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(submissionData)
+      });
 
-      if (question.question_type === "CB") {
-        // Check if all correct answers are selected and no incorrect ones
-        const correctAnswerIds = question.options
-          .filter((opt) => opt.is_correct)
-          .map((opt) => opt.answer_id);
-        
-        const isCorrect =
-          correctAnswerIds.length === userAnswer?.length &&
-          correctAnswerIds.every((id) => userAnswer.includes(id));
-
-        if (isCorrect) {
-          score += question.points;
-        }
-      } else if (question.question_type !== "DESC") {
-        const selectedOption = question.options.find(
-          (opt) => opt.answer_id === userAnswer
-        );
-        if (selectedOption?.is_correct) {
-          score += question.points;
-        }
+      if (!response.ok) {
+        throw new Error('Failed to submit test');
       }
-    });
 
-    // Store results
-    const testResults = {
-      quizData,
-      score,
-      totalPoints,
-      percentage: totalPoints > 0 ? ((score / totalPoints) * 100).toFixed(2) : 0,
-      answers: answers,
-      questions,
-    };
+      const result = await response.json();
 
-    localStorage.setItem("testResults", JSON.stringify(testResults));
-    
-    // Navigate to completed page - FIXED PATH
-    navigate("/completed-test");
+      // Store results with score from backend
+      const testResults = {
+        quizData,
+        score: result.data.score,
+        totalPoints: result.data.totalPoints,
+        percentage: result.data.percentage,
+        answers: answers,
+        questions: result.data.questionsWithCorrectAnswers, // Backend sends correct answers now
+      };
+
+      localStorage.setItem("testResults", JSON.stringify(testResults));
+      navigate("/completed-test");
+      
+    } catch (error) {
+      console.error("Error submitting test:", error);
+      alert("Failed to submit test. Please try again.");
+    }
   };
 
   const handleBackToHome = () => {
@@ -282,10 +267,8 @@ const TestPage = () => {
       className="min-h-screen bg-white flex flex-col"
       style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
     >
-      {/* Main Content */}
       <div className="flex-1 px-6 sm:px-8 lg:px-16 py-8 sm:py-12">
         <div className="max-w-5xl mx-auto">
-          {/* Header with Back Button and Timer */}
           <div className="flex items-center justify-between mb-10 sm:mb-12">
             <button
               onClick={handleBackToHome}
@@ -307,7 +290,6 @@ const TestPage = () => {
               <span className="font-normal text-base">Exit Test</span>
             </button>
 
-            {/* Timer */}
             <div
               className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-black rounded-lg transition-colors duration-200"
               style={{ boxShadow: "2px 2px 0px 0px rgba(0, 0, 0, 1)" }}
@@ -319,7 +301,6 @@ const TestPage = () => {
             </div>
           </div>
 
-          {/* Question Header */}
           <div className="mb-8 sm:mb-10">
             <div className="flex items-center gap-3 mb-6">
               <h1 className="text-2xl sm:text-3xl font-semibold text-gray-900">
@@ -334,7 +315,6 @@ const TestPage = () => {
             </p>
           </div>
 
-          {/* Answer Options */}
           {currentQuestion.question_type === "DESC" ? (
             <div className="mb-16 sm:mb-20">
               <textarea
@@ -408,7 +388,6 @@ const TestPage = () => {
             </div>
           )}
 
-          {/* Next Button */}
           <div className="flex justify-end">
             <button
               onClick={handleNext}
@@ -434,7 +413,6 @@ const TestPage = () => {
         </div>
       </div>
 
-      {/* Footer */}
       <Footer />
     </div>
   );

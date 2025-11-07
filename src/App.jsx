@@ -38,9 +38,10 @@ function App() {
         <Route element={<AdminProtectedRoutes />}>
           <Route path="admin" element={<MainLayout />}>
             <Route path="dashboard" element={<DashboardPage />} />
-            <Route path="examiners" element={<ComingSoon />} />
+
+            {/* <Route path="examiners" element={<ComingSoon />} />
             <Route path="trainings" element={<ComingSoon />} />
-            <Route path="assessments" element={<ComingSoon />} />
+            <Route path="assessments" element={<ComingSoon />} /> */}
 
             {/* examiners submenu route */}
             <Route path="examiners/tests" element={<TestPage />} />
