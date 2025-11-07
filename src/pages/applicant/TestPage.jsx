@@ -68,13 +68,11 @@ const TestPage = () => {
       const questionsResult = await questionsResponse.json();
       const questionsData = questionsResult.data || [];
 
-      // IMPORTANT: Use /test/ endpoint to get options WITHOUT is_correct
       const questionsWithOptions = await Promise.all(
         questionsData.map(async (question) => {
           try {
-            // CHANGED: Use secure endpoint that doesn't expose correct answers
             const optionsResponse = await fetch(
-              `${API_BASE_URL}/answer/test/${question.question_id}`
+              `${API_BASE_URL}/answer/get/${question.question_id}`
             );
             
             if (!optionsResponse.ok) {
@@ -89,7 +87,7 @@ const TestPage = () => {
               options: options.map((opt) => ({
                 answer_id: opt.answer_id,
                 option_text: opt.option_text,
-                // is_correct is NOT included - security fix
+                is_correct: opt.is_correct,
               })),
             };
           } catch (err) {
@@ -172,42 +170,115 @@ const TestPage = () => {
 
   const submitTest = async (answers = userAnswers) => {
     try {
-      // Prepare submission data
-      const submissionData = {
-        quiz_id: quizData.quiz_id,
-        answers: answers.map((answer, index) => ({
-          question_id: questions[index].question_id,
-          answer: answer, // Can be single ID, array of IDs, or text
-          question_type: questions[index].question_type
-        }))
-      };
+      // Calculate score
+      let score = 0;
+      let totalPoints = 0;
 
-      // Send to backend for scoring
-      const response = await fetch(`${API_BASE_URL}/result/submit`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(submissionData)
+      questions.forEach((question, index) => {
+        totalPoints += question.points;
+        const userAnswer = answers[index];
+
+        if (question.question_type === "CB") {
+          const correctAnswerIds = question.options
+            .filter((opt) => opt.is_correct)
+            .map((opt) => opt.answer_id);
+          
+          const isCorrect =
+            correctAnswerIds.length === userAnswer?.length &&
+            correctAnswerIds.every((id) => userAnswer.includes(id));
+
+          if (isCorrect) {
+            score += question.points;
+          }
+        } else if (question.question_type === "DESC") {
+          if (userAnswer && userAnswer.trim().length > 0) {
+            score += question.points;
+          }
+        } else {
+          const selectedOption = question.options.find(
+            (opt) => opt.answer_id === userAnswer
+          );
+          if (selectedOption?.is_correct) {
+            score += question.points;
+          }
+        }
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to submit test');
-      }
+      const percentage = totalPoints > 0 ? ((score / totalPoints) * 100).toFixed(2) : 0;
 
-      const result = await response.json();
-
-      // Store results with score from backend
+      // Store results in localStorage for the completed page
       const testResults = {
         quizData,
-        score: result.data.score,
-        totalPoints: result.data.totalPoints,
-        percentage: result.data.percentage,
+        score,
+        totalPoints,
+        percentage,
         answers: answers,
-        questions: result.data.questionsWithCorrectAnswers, // Backend sends correct answers now
+        questions,
       };
 
       localStorage.setItem("testResults", JSON.stringify(testResults));
+
+      // Get applicant data
+      const applicantData = location.state?.applicantData || 
+        JSON.parse(localStorage.getItem("applicantData") || "{}");
+
+      // Save result to database
+      const resultData = {
+        examiner_id: applicantData.examiner_id || null,
+        quiz_id: quizData.quiz_id,
+        score: score,
+        status: "COMPLETED"
+      };
+
+      try {
+        const resultResponse = await fetch(`${API_BASE_URL}/result/create`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(resultData)
+        });
+
+        if (resultResponse.ok) {
+          const resultJson = await resultResponse.json();
+          const createdResult = resultJson.data;
+          console.log("Result saved to database:", createdResult);
+
+          // Create bridge entry if result was created successfully
+          if (createdResult && createdResult.result_id) {
+            const bridgeData = {
+              examiner_id: applicantData.examiner_id || null,
+              quiz_id: quizData.quiz_id,
+              result_id: createdResult.result_id
+            };
+
+            try {
+              const bridgeResponse = await fetch(`${API_BASE_URL}/bridge/create`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(bridgeData)
+              });
+
+              if (bridgeResponse.ok) {
+                const bridgeJson = await bridgeResponse.json();
+                console.log("Bridge created successfully:", bridgeJson.data);
+              } else {
+                console.warn("Failed to create bridge entry");
+              }
+            } catch (bridgeError) {
+              console.error("Error creating bridge:", bridgeError);
+            }
+          }
+        } else {
+          console.warn("Failed to save result to database");
+        }
+      } catch (error) {
+        console.error("Error saving result:", error);
+      }
+
+      // Navigate to completed page
       navigate("/completed-test");
       
     } catch (error) {
