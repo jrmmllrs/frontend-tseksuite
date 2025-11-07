@@ -190,13 +190,13 @@ const QuizManagement = ({ department, onBack }) => {
         <div className="mb-8">
           <div className="flex justify-between items-start mb-2">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-1">
+              <h1 className="text-3xl text-[#2E99B0] mb-1 font-['Poppins']">
                 {department.dept_name}
               </h1>
             </div>
             <button
               onClick={() => setShowAddModal(true)}
-              className="flex items-center gap-2 bg-cyan-600 text-white px-5 py-2.5 rounded-lg transition-colors shadow-sm hover:bg-cyan-700"
+              className="flex items-center gap-2 bg-[#2E99B0] text-white px-5 py-2.5 rounded-lg transition-colors shadow-sm hover:bg-cyan-700"
             >
               <Plus size={20} />
               <span className="font-medium">Add Test Categories</span>
@@ -205,7 +205,7 @@ const QuizManagement = ({ department, onBack }) => {
         </div>
 
         <div className="mb-6">
-          <h2 className="text-lg font-semibold text-gray-700">Categories</h2>
+          <h2 className="text-lg text-gray-700 font-['Poppins']">Quizzes</h2>
         </div>
 
         {error && (
@@ -230,12 +230,13 @@ const QuizManagement = ({ department, onBack }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {filteredQuizzes.map((quiz) => (
               <div
+                onClick={() => setSelectedQuiz(quiz)}
                 key={quiz.quiz_id}
                 className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow relative"
               >
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                    <h3 className="text-lg font-['Poppins'] text-[#2E99B0] mb-1">
                       {quiz.quiz_name}
                     </h3>
                   </div>
@@ -285,22 +286,22 @@ const QuizManagement = ({ department, onBack }) => {
                   </span>
                 </div>
 
-                <div className="h-24 mb-4"></div>
+                {/* <div className="h-24 mb-4"></div> */}
 
-                <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                <div className="flex items-center justify-end gap-2 pt-4 border-t border-gray-100">
                   <button 
                     onClick={() => openInviteModal(quiz)}
-                    className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition-colors hover:bg-emerald-700"
+                    className="flex items-center gap-2 bg-[#2E99B0] text-white px-4 py-1.5 rounded-lg text-sm font-medium transition-colors hover:bg-emerald-700"
                   >
-                    <LinkIcon size={16} />
+                    <LinkIcon size={18} />
                     Invite
                   </button>
-                  <button 
+                  {/* <button 
                     onClick={() => setSelectedQuiz(quiz)}
-                    className="bg-cyan-600 text-white px-6 py-1.5 rounded-lg text-sm font-medium transition-colors hover:bg-cyan-700"
+                    className="bg-[#2E99B0] text-white px-6 py-1.5 rounded-lg text-sm font-medium transition-colors hover:bg-cyan-700"
                   >
                     View
-                  </button>
+                  </button> */}
                 </div>
 
                 <div className="mt-3">
@@ -515,8 +516,8 @@ const QuizManagement = ({ department, onBack }) => {
                   </label>
                   <input
                     type="number"
-                    value={inviteEmail}
-                    onChange={(e) => setInviteEmail(e.target.value)}
+                    // value={inviteEmail}
+                    // onChange={(e) => setInviteEmail(e.target.value)}
                     placeholder="Enter Expiration Time(Hours)"
                     min={1}
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
