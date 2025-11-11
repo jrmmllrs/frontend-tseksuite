@@ -4,7 +4,6 @@ import ClockIcon from "../../assets/Clock.svg";
 import Footer from "../../components/applicant/Footer";
 
 const TestPage = () => {
-  
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -20,10 +19,12 @@ const TestPage = () => {
   const API_BASE_URL = "http://localhost:3000/api";
 
   useEffect(() => {
-    const selectedQuiz = location.state?.quizData || 
+    const selectedQuiz =
+      location.state?.quizData ||
       JSON.parse(localStorage.getItem("selectedQuiz") || "null");
-    
-    const applicantData = location.state?.applicantData || 
+
+    const applicantData =
+      location.state?.applicantData ||
       JSON.parse(localStorage.getItem("applicantData") || "{}");
 
     if (!selectedQuiz || !applicantData.department) {
@@ -57,11 +58,11 @@ const TestPage = () => {
   const fetchQuestions = async (quizId) => {
     try {
       setLoading(true);
-      
+
       const questionsResponse = await fetch(
         `${API_BASE_URL}/question/get/${quizId}`
       );
-      
+
       if (!questionsResponse.ok) {
         throw new Error("Failed to fetch questions");
       }
@@ -75,7 +76,7 @@ const TestPage = () => {
             const optionsResponse = await fetch(
               `${API_BASE_URL}/answer/get/${question.question_id}`
             );
-            
+
             if (!optionsResponse.ok) {
               return { ...question, options: [] };
             }
@@ -92,7 +93,10 @@ const TestPage = () => {
               })),
             };
           } catch (err) {
-            console.error(`Error fetching options for question ${question.question_id}:`, err);
+            console.error(
+              `Error fetching options for question ${question.question_id}:`,
+              err
+            );
             return { ...question, options: [] };
           }
         })
@@ -100,7 +104,6 @@ const TestPage = () => {
 
       setQuestions(questionsWithOptions);
       setUserAnswers(new Array(questionsWithOptions.length).fill(null));
-      
     } catch (error) {
       console.error("Error fetching questions:", error);
       alert("Failed to load questions. Please try again.");
@@ -123,7 +126,7 @@ const TestPage = () => {
 
   const handleAnswerSelect = (answerId) => {
     const currentQuestion = questions[currentQuestionIndex];
-    
+
     if (currentQuestion.question_type === "CB") {
       setSelectedAnswers((prev) => {
         if (prev.includes(answerId)) {
@@ -139,7 +142,7 @@ const TestPage = () => {
 
   const handleNext = () => {
     const currentQuestion = questions[currentQuestionIndex];
-    
+
     if (currentQuestion.question_type === "CB") {
       if (selectedAnswers.length === 0) {
         alert("Please select at least one answer");
@@ -171,117 +174,105 @@ const TestPage = () => {
 
   const submitTest = async (answers = userAnswers) => {
     try {
-      // Calculate score
-      let score = 0;
-      let totalPoints = 0;
+      if (!quizData) {
+        alert("Quiz data not found. Cannot submit test.");
+        return;
+      }
 
-      questions.forEach((question, index) => {
-        totalPoints += question.points;
+      const applicantData =
+        location.state?.applicantData ||
+        JSON.parse(localStorage.getItem("applicantData") || "{}");
+
+      if (!applicantData?.examiner_id) {
+        alert("Applicant data missing. Cannot submit test.");
+        return;
+      }
+
+      // Format answers for backend
+      const formattedAnswers = questions.map((question, index) => {
         const userAnswer = answers[index];
 
         if (question.question_type === "CB") {
-          const correctAnswerIds = question.options
-            .filter((opt) => opt.is_correct)
-            .map((opt) => opt.answer_id);
-          
-          const isCorrect =
-            correctAnswerIds.length === userAnswer?.length &&
-            correctAnswerIds.every((id) => userAnswer.includes(id));
-
-          if (isCorrect) {
-            score += question.points;
-          }
+          return {
+            question_id: question.question_id,
+            selected_answer: Array.isArray(userAnswer)
+              ? question.options
+                  .filter((opt) => userAnswer.includes(opt.answer_id))
+                  .map((opt) => opt.option_text)
+              : [],
+          };
         } else if (question.question_type === "DESC") {
-          if (userAnswer && userAnswer.trim().length > 0) {
-            score += question.points;
-          }
+          return {
+            question_id: question.question_id,
+            selected_answer: userAnswer?.trim() || "",
+          };
         } else {
+          // MC / TF
           const selectedOption = question.options.find(
             (opt) => opt.answer_id === userAnswer
           );
-          if (selectedOption?.is_correct) {
-            score += question.points;
-          }
+          return {
+            question_id: question.question_id,
+            selected_answer: selectedOption?.option_text || "",
+          };
         }
       });
 
-      const percentage = totalPoints > 0 ? ((score / totalPoints) * 100).toFixed(2) : 0;
-
-      // Store results in localStorage for the completed page
-      const testResults = {
-        quizData,
-        score,
-        totalPoints,
-        percentage,
-        answers: answers,
-        questions,
-      };
-
-      localStorage.setItem("testResults", JSON.stringify(testResults));
-
-      // Get applicant data
-      const applicantData = location.state?.applicantData || 
-        JSON.parse(localStorage.getItem("applicantData") || "{}");
-
-      // Save result to database
+      // 1️⃣ Create result
       const resultData = {
-        examiner_id: applicantData.examiner_id || null,
+        examiner_id: applicantData.examiner_id,
         quiz_id: quizData.quiz_id,
-        score: score,
-        status: "COMPLETED"
+        status: "COMPLETED",
+        answers: formattedAnswers,
       };
 
-      try {
-        const resultResponse = await fetch(`${API_BASE_URL}/result/create`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(resultData)
-        });
+      console.log("Submitting result payload:", resultData);
 
-        if (resultResponse.ok) {
-          const resultJson = await resultResponse.json();
-          const createdResult = resultJson.data;
-          console.log("Result saved to database:", createdResult);
+      const response = await fetch(`${API_BASE_URL}/result/create`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(resultData),
+      });
 
-          // Create bridge entry if result was created successfully
-          if (createdResult && createdResult.result_id) {
-            const bridgeData = {
-              examiner_id: applicantData.examiner_id || null,
-              quiz_id: quizData.quiz_id,
-              result_id: createdResult.result_id
-            };
-
-            try {
-              const bridgeResponse = await fetch(`${API_BASE_URL}/bridge/create`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(bridgeData)
-              });
-
-              if (bridgeResponse.ok) {
-                const bridgeJson = await bridgeResponse.json();
-                console.log("Bridge created successfully:", bridgeJson.data);
-              } else {
-                console.warn("Failed to create bridge entry");
-              }
-            } catch (bridgeError) {
-              console.error("Error creating bridge:", bridgeError);
-            }
-          }
-        } else {
-          console.warn("Failed to save result to database");
-        }
-      } catch (error) {
-        console.error("Error saving result:", error);
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`Failed to submit result: ${errText}`);
       }
 
-      // Navigate to completed page
+      const resultJson = await response.json();
+      const createdResult = resultJson.data;
+      console.log("Result created:", createdResult);
+
+      // 2️⃣ Create bridge entry after result is created
+      if (createdResult?.result_id) {
+        const bridgeData = {
+          examiner_id: applicantData.examiner_id,
+          quiz_id: quizData.quiz_id,
+          result_id: createdResult.result_id,
+        };
+
+        const bridgeResponse = await fetch(`${API_BASE_URL}/bridge/create`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(bridgeData),
+        });
+
+        if (!bridgeResponse.ok) {
+          const bridgeErrText = await bridgeResponse.text();
+          console.warn("Failed to create bridge:", bridgeErrText);
+        } else {
+          const bridgeJson = await bridgeResponse.json();
+          console.log("Bridge created successfully:", bridgeJson.data);
+        }
+      }
+
+      // Save test results locally
+      localStorage.setItem(
+        "testResults",
+        JSON.stringify({ quizData, questions, answers: formattedAnswers })
+      );
+
       navigate("/completed-test");
-      
     } catch (error) {
       console.error("Error submitting test:", error);
       alert("Failed to submit test. Please try again.");
@@ -289,7 +280,11 @@ const TestPage = () => {
   };
 
   const handleBackToHome = () => {
-    if (window.confirm("Are you sure you want to exit? Your progress will be lost.")) {
+    if (
+      window.confirm(
+        "Are you sure you want to exit? Your progress will be lost."
+      )
+    ) {
       navigate("/");
     }
   };
@@ -319,8 +314,12 @@ const TestPage = () => {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">No Questions Available</h2>
-          <p className="text-gray-600 mb-6">This quiz doesn't have any questions yet.</p>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            No Questions Available
+          </h2>
+          <p className="text-gray-600 mb-6">
+            This quiz doesn't have any questions yet.
+          </p>
           <button
             onClick={() => navigate("/quiz-selection")}
             className="px-6 py-3 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700"
@@ -400,9 +399,10 @@ const TestPage = () => {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-16 sm:mb-20">
               {currentQuestion.options.map((option) => {
-                const isSelected = currentQuestion.question_type === "CB"
-                  ? selectedAnswers.includes(option.answer_id)
-                  : selectedAnswer === option.answer_id;
+                const isSelected =
+                  currentQuestion.question_type === "CB"
+                    ? selectedAnswers.includes(option.answer_id)
+                    : selectedAnswer === option.answer_id;
 
                 return (
                   <button
@@ -442,9 +442,7 @@ const TestPage = () => {
                       ) : (
                         <div
                           className={`w-5 h-5 flex-shrink-0 mt-0.5 rounded-full border-2 flex items-center justify-center ${
-                            isSelected
-                              ? "border-cyan-600"
-                              : "border-gray-400"
+                            isSelected ? "border-cyan-600" : "border-gray-400"
                           }`}
                         >
                           {isSelected && (
