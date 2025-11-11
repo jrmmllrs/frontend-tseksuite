@@ -76,7 +76,7 @@ function ResultsPage() {
   return (
     <div className='h-screen w-full px-3 sm:px-6 md:px-8 py-6'>
       <div className='mb-20'>
-        <h1 className="text-[#2E99B0] text-md sm:text-md md:text-xl lg:text-2xl xl:text-3xl font-['Poppins']">
+        <h1 className="text-[#2E99B0] text-md sm:text-md md:text-xl lg:text-2xl xl:text-3xl">
           Results
         </h1>
         <p>This table is for test results</p>

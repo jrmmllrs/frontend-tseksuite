@@ -63,7 +63,7 @@ function DashboardPage() {
     <>
       <div className="h-screen w-full px-3 sm:px-6 md:px-8 py-6">
         {/* Header */}
-        <h1 className="text-[#2E99B0] text-md sm:text-md md:text-xl lg:text-2xl xl:text-3xl mb-6 font-['Poppins']">
+        <h1 className="text-[#2E99B0] text-md sm:text-md md:text-xl lg:text-2xl xl:text-3xl mb-6">
           Dashboard
         </h1>
 

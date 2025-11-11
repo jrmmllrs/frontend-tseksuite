@@ -190,7 +190,7 @@ const QuizManagement = ({ department, onBack }) => {
         <div className="mb-8">
           <div className="flex justify-between items-start mb-2">
             <div>
-              <h1 className="text-3xl text-[#2E99B0] mb-1 font-['Poppins']">
+              <h1 className="text-3xl text-[#2E99B0] mb-1">
                 {department.dept_name}
               </h1>
             </div>
@@ -205,7 +205,7 @@ const QuizManagement = ({ department, onBack }) => {
         </div>
 
         <div className="mb-6">
-          <h2 className="text-lg text-gray-700 font-['Poppins']">Quizzes</h2>
+          <h2 className="text-lg text-gray-700 ">Quizzes</h2>
         </div>
 
         {error && (
@@ -230,13 +230,16 @@ const QuizManagement = ({ department, onBack }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {filteredQuizzes.map((quiz) => (
               <div
-                onClick={() => setSelectedQuiz(quiz)}
+                onClick={() => {
+                  // stopPropagation();
+                  setSelectedQuiz(quiz)}
+                  }
                 key={quiz.quiz_id}
                 className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow relative"
               >
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
-                    <h3 className="text-lg font-['Poppins'] text-[#2E99B0] mb-1">
+                    <h3 className="text-lg text-[#2E99B0] mb-1">
                       {quiz.quiz_name}
                     </h3>
                   </div>
@@ -290,7 +293,9 @@ const QuizManagement = ({ department, onBack }) => {
 
                 <div className="flex items-center justify-end gap-2 pt-4 border-t border-gray-100">
                   <button 
-                    onClick={() => openInviteModal(quiz)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openInviteModal(quiz)}}
                     className="flex items-center gap-2 bg-[#2E99B0] text-white px-4 py-1.5 rounded-lg text-sm font-medium transition-colors hover:bg-emerald-700"
                   >
                     <LinkIcon size={18} />
