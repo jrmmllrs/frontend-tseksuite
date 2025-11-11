@@ -74,7 +74,7 @@ const TestPage = () => {
         questionsData.map(async (question) => {
           try {
             const optionsResponse = await fetch(
-              `${API_BASE_URL}/answer/get/${question.question_id}`
+              `${API_BASE_URL}/answer/test/${question.question_id}`
             );
 
             if (!optionsResponse.ok) {

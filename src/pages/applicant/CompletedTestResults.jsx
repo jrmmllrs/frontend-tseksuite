@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { CheckCircle2, XCircle, Trophy, Clock, FileText, AlertCircle } from "lucide-react";
+import {
+  CheckCircle2,
+  XCircle,
+  Trophy,
+  Clock,
+  FileText,
+  AlertCircle,
+  Award,
+} from "lucide-react";
 import Footer from "../../components/applicant/Footer";
 
 const CompletedTestResults = () => {
@@ -10,6 +18,7 @@ const CompletedTestResults = () => {
   const [saving, setSaving] = useState(false);
   const [resultSaved, setResultSaved] = useState(false);
   const [saveError, setSaveError] = useState(null);
+  const [detailedResults, setDetailedResults] = useState([]);
 
   const API_BASE_URL = "http://localhost:3000/api";
 
@@ -19,12 +28,10 @@ const CompletedTestResults = () => {
 
   const loadAndSaveResults = async () => {
     try {
-      // Get test results from localStorage
       const results = JSON.parse(localStorage.getItem("testResults") || "null");
-      const applicantData = JSON.parse(localStorage.getItem("applicantData") || "{}");
-
-      console.log("Test Results:", results);
-      console.log("Applicant Data:", applicantData);
+      const applicantData = JSON.parse(
+        localStorage.getItem("applicantData") || "{}"
+      );
 
       if (!results) {
         alert("No test results found. Redirecting...");
@@ -32,7 +39,6 @@ const CompletedTestResults = () => {
         return;
       }
 
-      // Validate required data
       if (!results.quizData || !results.quizData.quiz_id) {
         console.error("Quiz data is missing or invalid");
         setSaveError("Invalid quiz data");
@@ -41,18 +47,8 @@ const CompletedTestResults = () => {
         return;
       }
 
-      if (results.score === undefined || results.score === null) {
-        console.error("Score is missing");
-        setSaveError("Invalid score data");
-        setTestResults(results);
-        setLoading(false);
-        return;
-      }
-
       setTestResults(results);
       setLoading(false);
-
-      // Save results to backend
       await saveResultsToBackend(results, applicantData);
     } catch (error) {
       console.error("Error loading results:", error);
@@ -62,117 +58,129 @@ const CompletedTestResults = () => {
   };
 
   const saveResultsToBackend = async (results, applicantData) => {
-    // try {
-    //   setSaving(true);
-    //   setSaveError(null);
-
-    //   const resultData = {
-    //     examiner_id: applicantData.examiner_id || null,
-    //     quiz_id: results.quizData.quiz_id,
-    //     score: Math.round(results.score), // Round to integer since DB expects INTEGER
-    //     status: "COMPLETED", // Use ENUM value from database
-    //   };
-
-    //   console.log("Sending result data:", resultData);
-
-    //   const response = await fetch(`${API_BASE_URL}/result/create`, {
-    //     method: "POST",
-    //     headers: {
-    //       "Content-Type": "application/json",
-    //     },
-    //     body: JSON.stringify(resultData),
-    //   });
-      
-    //   // Log the full error structure
-    //   if (data.errors) {
-    //     console.log("Error details:", data.errors);
-    //     // Log each error object in detail
-    //     data.errors.forEach((err, index) => {
-    //       console.log(`Error ${index}:`, JSON.stringify(err, null, 2));
-    //     });
-    //   }
-    //   if (data.details) {
-    //     console.log("Details:", data.details);
-    //   }
-
-    //   if (response.ok) {
-    //     setResultSaved(true);
-    //     console.log("Results saved successfully!");
-    //   } else {
-    //     const errorMsg = data.message || "Failed to save results";
-    //     let errorDetails = "";
-        
-    //     // Handle errors array - it might contain objects
-    //     if (data.errors && Array.isArray(data.errors)) {
-    //       const errorMessages = data.errors.map(err => {
-    //         // If error is an object with message property
-    //         if (typeof err === 'object' && err.message) {
-    //           return err.message;
-    //         }
-    //         // If error is an object, stringify it
-    //         if (typeof err === 'object') {
-    //           return JSON.stringify(err);
-    //         }
-    //         // If error is a string
-    //         return err;
-    //       });
-    //       errorDetails = `: ${errorMessages.join(", ")}`;
-    //     } else if (data.details && Array.isArray(data.details)) {
-    //       errorDetails = `: ${data.details.join(", ")}`;
-    //     }
-        
-    //     console.error("Failed to save results:", errorMsg + errorDetails);
-    //     console.error("Full error object:", JSON.stringify(data, null, 2));
-    //     setSaveError(errorMsg + errorDetails);
-    //   }
-    // } catch (error) {
-    //   console.error("Error saving results:", error);
-    //   setSaveError(`Network error: ${error.message}`);
-    // } finally {
-    //   setSaving(false);
-    // }
+    setSaving(true);
+    setSaveError(null);
 
     try {
-      
+      const formattedAnswers = results.questions.map((question, index) => {
+        let userAnswer = results.answers[index];
+
+        if (
+          userAnswer &&
+          typeof userAnswer === "object" &&
+          userAnswer.selected_answer
+        ) {
+          userAnswer = userAnswer.selected_answer;
+        }
+
+        return {
+          question_id: question.question_id,
+          selected_answer: userAnswer,
+        };
+      });
+
+      const status =
+        results.answers.length < results.questions.length
+          ? "ABANDONED"
+          : "COMPLETED";
+
+      const payload = {
+        examiner_id: applicantData.examiner_id,
+        quiz_id: results.quizData.quiz_id,
+        answers: formattedAnswers,
+        status: status,
+      };
+
+      const response = await fetch(`${API_BASE_URL}/result/create`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        const textResponse = await response.text();
+        throw new Error(
+          `Server returned non-JSON response. Status: ${response.status}`
+        );
+      }
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to save results");
+      }
+
+      const totalPoints = results.questions.reduce(
+        (sum, q) => sum + (q.points || 1),
+        0
+      );
+      const percentage = Math.round(
+        (data.data.score / data.data.max_score) * 100
+      );
+
+      setTestResults({
+        ...results,
+        score: data.data.score,
+        totalPoints: data.data.max_score,
+        percentage: percentage,
+        result_id: data.data.result_id,
+        status: data.data.status,
+      });
+
+      setDetailedResults(data.data.detailed_results || []);
+      setResultSaved(true);
+      setSaving(false);
     } catch (error) {
-      
+      console.error("Error saving results to backend:", error);
+      setSaveError(error.message || "Failed to save results to server");
+      setSaving(false);
     }
   };
 
   const handleBackToHome = () => {
-    // Clear test data
     localStorage.removeItem("testResults");
     localStorage.removeItem("selectedQuiz");
     localStorage.removeItem("applicantData");
     navigate("/");
   };
 
-  const getStatusColor = (percentage) => {
-    if (percentage >= 80) return "text-green-600 bg-green-50 border-green-200";
-    if (percentage >= 60) return "text-yellow-600 bg-yellow-50 border-yellow-200";
-    return "text-red-600 bg-red-50 border-red-200";
+  const getPerformanceLevel = (percentage) => {
+    if (percentage >= 90)
+      return { level: "Master", color: "text-green-600", bg: "bg-green-100" };
+    if (percentage >= 80)
+      return { level: "Excellent", color: "text-teal-600", bg: "bg-teal-100" };
+    if (percentage >= 70)
+      return { level: "Great", color: "text-blue-600", bg: "bg-blue-100" };
+    if (percentage >= 60)
+      return { level: "Good", color: "text-cyan-600", bg: "bg-cyan-100" };
+    return {
+      level: "Keep Trying",
+      color: "text-amber-600",
+      bg: "bg-amber-100",
+    };
   };
 
-  const getStatusText = (percentage) => {
-    if (percentage >= 80) return "Excellent!";
-    if (percentage >= 70) return "Passed";
-    if (percentage >= 60) return "Good Effort";
-    return "Needs Improvement";
-  };
-
-  const getStatusIcon = (percentage) => {
-    if (percentage >= 70) {
-      return <CheckCircle2 className="w-16 h-16 sm:w-20 sm:h-20 text-green-500" />;
+  const formatUserAnswer = (userAnswer) => {
+    if (userAnswer === null || userAnswer === undefined) {
+      return "No answer provided";
     }
-    return <XCircle className="w-16 h-16 sm:w-20 sm:h-20 text-red-500" />;
+    if (Array.isArray(userAnswer)) {
+      return userAnswer.length > 0
+        ? userAnswer.join(", ")
+        : "No answer provided";
+    }
+    return userAnswer.toString();
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-cyan-200 border-t-cyan-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading results...</p>
+          <div className="w-12 h-12 border-3 border-[#217486] border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+          <p className="text-gray-600 text-sm">Loading results...</p>
         </div>
       </div>
     );
@@ -182,259 +190,216 @@ const CompletedTestResults = () => {
     return null;
   }
 
-  const { score, totalPoints, percentage, quizData, questions, answers } = testResults;
+  const { score, totalPoints, percentage, quizData, questions } = testResults;
+  const performance = getPerformanceLevel(percentage);
+  const scoreCalculated = score !== undefined && score !== null;
 
   return (
-    <div
-      className="min-h-screen bg-gray-50 flex flex-col"
-      style={{ fontFamily: "Poppins, sans-serif" }}
-    >
-      <div className="flex-1 px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+    <div className="min-h-screen bg-white flex flex-col">
+      <div className="flex-1 px-4 py-6">
         <div className="max-w-4xl mx-auto">
-          {/* Success Header */}
-          <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-10 mb-6 text-center border-2 border-gray-200">
-            <div className="flex justify-center mb-6">
-              {getStatusIcon(percentage)}
+          {/* Main Header Card */}
+          <div className="bg-gradient-to-r from-[#217486] to-[#2c8fa3] rounded-2xl shadow-lg p-6 mb-6 text-white">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h1 className="text-2xl font-bold">{quizData.quiz_name}</h1>
+                <p className="text-white/80 text-sm">
+                  Test Completed Successfully
+                </p>
+              </div>
+              <div className="flex items-center gap-2 bg-white/20 px-3 py-1 rounded-full">
+                <span className="text-sm font-medium">Completed</span>
+              </div>
             </div>
 
-            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
-              Test Completed!
-            </h1>
-            <p className="text-gray-600 mb-6">
-              You've successfully completed {quizData.quiz_name}
-            </p>
-
-            {/* Score Display */}
-            <div className="flex items-center justify-center gap-8 mb-6">
-              <div className="text-center">
-                <div className="text-5xl sm:text-6xl font-bold text-cyan-600 mb-2">
-                  {percentage}%
+            {scoreCalculated ? (
+              <div className="flex items-center justify-between">
+                <div className="flex items-baseline gap-3">
+                  <div className="text-5xl font-black">{percentage}%</div>
+                  <div className="text-white/80 text-lg">/ 100%</div>
                 </div>
-                <p className="text-gray-600 text-sm">Overall Score</p>
-              </div>
-            </div>
-
-            {/* Status Badge */}
-            <div
-              className={`inline-block px-6 py-3 rounded-full text-lg font-semibold border-2 ${getStatusColor(
-                percentage
-              )}`}
-            >
-              {getStatusText(percentage)}
-            </div>
-
-            {/* Saving Indicator */}
-            {saving && (
-              <div className="mt-6 flex items-center justify-center gap-2 text-sm text-gray-600">
-                <div className="w-4 h-4 border-2 border-gray-300 border-t-cyan-600 rounded-full animate-spin"></div>
-                <span>Saving your results...</span>
-              </div>
-            )}
-
-            {/* Success Message */}
-            {resultSaved && (
-              <div className="mt-6 flex items-center justify-center gap-2 text-sm text-green-600 bg-green-50 p-3 rounded-lg border border-green-200">
-                <CheckCircle2 className="w-5 h-5" />
-                <span className="font-medium">Results saved successfully!</span>
-              </div>
-            )}
-
-            {/* Error Message */}
-            {saveError && (
-              <div className="mt-6 bg-red-50 border border-red-200 rounded-lg p-4">
-                <div className="flex items-start gap-3">
-                  <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
-                  <div className="text-left flex-1">
-                    <p className="text-sm font-semibold text-red-900 mb-1">
-                      Failed to save results
-                    </p>
-                    <p className="text-xs text-red-700">{saveError}</p>
-                    <p className="text-xs text-red-600 mt-2">
-                      Don't worry, your test completion is still valid. Please contact support if this persists.
-                    </p>
-                  </div>
+                <div
+                  className={`px-4 py-2 rounded-full ${performance.bg} ${performance.color} font-bold text-sm`}
+                >
+                  {performance.level}
                 </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center gap-3 py-4">
+                <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <span className="text-white/90">Calculating your score...</span>
               </div>
             )}
           </div>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 bg-cyan-100 rounded-lg">
-                  <Trophy className="w-5 h-5 text-cyan-600" />
+          {/* Stats Grid */}
+          {scoreCalculated && (
+            <div className="grid grid-cols-3 gap-4 mb-6">
+              <div className="bg-white border border-gray-200 rounded-xl p-4 text-center shadow-sm hover:shadow-md transition-shadow">
+                <Trophy className="w-8 h-8 text-amber-500 mx-auto mb-2" />
+                <div className="text-2xl font-bold text-gray-900">
+                  {score}/{totalPoints}
                 </div>
-                <h3 className="font-semibold text-gray-900">Score</h3>
+                <div className="text-gray-600 text-sm">Points</div>
               </div>
-              <p className="text-2xl font-bold text-gray-900">
-                {score} / {totalPoints}
-              </p>
-              <p className="text-sm text-gray-600">Points earned</p>
+              <div className="bg-white border border-gray-200 rounded-xl p-4 text-center shadow-sm hover:shadow-md transition-shadow">
+                <FileText className="w-8 h-8 text-[#217486] mx-auto mb-2" />
+                <div className="text-2xl font-bold text-gray-900">
+                  {questions.length}
+                </div>
+                <div className="text-gray-600 text-sm">Questions</div>
+              </div>
+              <div className="bg-white border border-gray-200 rounded-xl p-4 text-center shadow-sm hover:shadow-md transition-shadow">
+                <Clock className="w-8 h-8 text-purple-500 mx-auto mb-2" />
+                <div className="text-2xl font-bold text-gray-900">
+                  {quizData.time_limit}
+                </div>
+                <div className="text-gray-600 text-sm">Minutes</div>
+              </div>
             </div>
+          )}
 
-            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <FileText className="w-5 h-5 text-green-600" />
-                </div>
-                <h3 className="font-semibold text-gray-900">Questions</h3>
-              </div>
-              <p className="text-2xl font-bold text-gray-900">
-                {questions.length}
-              </p>
-              <p className="text-sm text-gray-600">Total questions</p>
+          {/* Status Messages */}
+          {saving && (
+            <div className="flex items-center justify-center gap-2 bg-blue-50 border border-blue-200 px-4 py-3 rounded-xl mb-4">
+              <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+              <span className="text-blue-700 text-sm">
+                Saving your results...
+              </span>
             </div>
+          )}
 
-            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <Clock className="w-5 h-5 text-purple-600" />
-                </div>
-                <h3 className="font-semibold text-gray-900">Time Limit</h3>
-              </div>
-              <p className="text-2xl font-bold text-gray-900">
-                {quizData.time_limit}
-              </p>
-              <p className="text-sm text-gray-600">Minutes</p>
+          {resultSaved && (
+            <div className="flex items-center justify-center gap-2 bg-green-50 border border-green-200 px-4 py-3 rounded-xl mb-4">
+              <CheckCircle2 className="w-4 h-4 text-green-600" />
+              <span className="text-green-700 text-sm font-medium">
+                Results saved successfully!
+              </span>
             </div>
-          </div>
+          )}
+
+          {saveError && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-4">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                <div className="text-left">
+                  <p className="text-red-800 font-medium text-sm mb-1">
+                    Failed to save results
+                  </p>
+                  <p className="text-red-600 text-xs">{saveError}</p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Detailed Results */}
-          <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8 mb-6 border-2 border-gray-200">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">
-              Detailed Results
-            </h2>
+          {scoreCalculated && detailedResults.length > 0 && (
+            <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 mb-6">
+              <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <Award className="w-5 h-5 text-[#217486]" />
+                Detailed Results
+              </h2>
 
-            <div className="space-y-6">
-              {questions.map((question, index) => {
-                const userAnswer = answers[index];
-                let isCorrect = false;
+              <div className="space-y-4">
+                {questions.map((question, index) => {
+                  const detailedResult =
+                    detailedResults.find(
+                      (dr) => dr.question_id === question.question_id
+                    ) || {};
 
-                // Determine if answer is correct
-                if (question.question_type === "CB") {
-                  const correctAnswerIds = question.options
-                    .filter((opt) => opt.is_correct)
-                    .map((opt) => opt.answer_id);
-                  isCorrect =
-                    correctAnswerIds.length === userAnswer?.length &&
-                    correctAnswerIds.every((id) => userAnswer.includes(id));
-                } else if (question.question_type === "DESC") {
-                  isCorrect = null; // Descriptive questions need manual grading
-                } else {
-                  const selectedOption = question.options.find(
-                    (opt) => opt.answer_id === userAnswer
-                  );
-                  isCorrect = selectedOption?.is_correct || false;
-                }
+                  const isCorrect = detailedResult.is_correct;
+                  const userAnswer = detailedResult.user_answer;
+                  const correctAnswers = detailedResult.correct_answers || [];
 
-                return (
-                  <div
-                    key={index}
-                    className={`p-5 rounded-xl border-2 ${
-                      isCorrect === null
-                        ? "border-gray-200 bg-gray-50"
-                        : isCorrect
-                        ? "border-green-200 bg-green-50"
-                        : "border-red-200 bg-red-50"
-                    }`}
-                  >
-                    <div className="flex items-start gap-3 mb-3">
-                      <div className="flex-shrink-0 mt-1">
-                        {isCorrect === null ? (
-                          <div className="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center text-white text-sm font-bold">
-                            ?
-                          </div>
-                        ) : isCorrect ? (
-                          <CheckCircle2 className="w-6 h-6 text-green-600" />
-                        ) : (
-                          <XCircle className="w-6 h-6 text-red-600" />
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-sm font-semibold text-gray-900">
-                            Question {index + 1}
-                          </span>
-                          <span className="text-xs px-2 py-1 bg-white rounded-full text-gray-600 border border-gray-200">
-                            {question.points} {question.points === 1 ? "point" : "points"}
-                          </span>
+                  return (
+                    <div
+                      key={index}
+                      className={`p-4 rounded-xl border-2 ${
+                        isCorrect === null
+                          ? "bg-gray-50 border-gray-200"
+                          : isCorrect
+                          ? "bg-green-50 border-green-200"
+                          : "bg-red-50 border-red-200"
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div
+                          className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm border-2 ${
+                            isCorrect === null
+                              ? "bg-gray-100 border-gray-300 text-gray-600"
+                              : isCorrect
+                              ? "bg-green-100 border-green-300 text-green-700"
+                              : "bg-red-100 border-red-300 text-red-700"
+                          }`}
+                        >
+                          {index + 1}
                         </div>
-                        <p className="text-gray-900 mb-3 font-medium">
-                          {question.question_text}
-                        </p>
 
-                        {question.question_type !== "DESC" && (
-                          <div className="space-y-2 text-sm">
-                            {question.options.map((option) => {
-                              const isUserAnswer = question.question_type === "CB"
-                                ? userAnswer?.includes(option.answer_id)
-                                : userAnswer === option.answer_id;
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-3">
+                            <p className="text-gray-900 font-medium text-sm flex-1">
+                              {question.question_text}
+                            </p>
+                            <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs font-medium">
+                              {question.points} pt
+                              {question.points !== 1 ? "s" : ""}
+                            </span>
+                          </div>
 
-                              return (
-                                <div
-                                  key={option.answer_id}
-                                  className={`flex items-center gap-2 p-2 rounded ${
-                                    option.is_correct
-                                      ? "bg-green-100 text-green-900 font-medium"
-                                      : isUserAnswer
-                                      ? "bg-red-100 text-red-900"
-                                      : "text-gray-700"
-                                  }`}
-                                >
-                                  {option.is_correct && (
-                                    <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0" />
-                                  )}
-                                  {!option.is_correct && isUserAnswer && (
-                                    <XCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
-                                  )}
-                                  <span>{option.option_text}</span>
-                                  {option.is_correct && (
-                                    <span className="ml-auto text-xs">(Correct)</span>
-                                  )}
-                                  {!option.is_correct && isUserAnswer && (
-                                    <span className="ml-auto text-xs">(Your answer)</span>
-                                  )}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                            <div className="bg-white rounded-lg p-3 border">
+                              <div className="text-gray-600 text-xs font-medium mb-1">
+                                YOUR ANSWER
+                              </div>
+                              <div
+                                className={`font-medium ${
+                                  isCorrect === null
+                                    ? "text-gray-700"
+                                    : isCorrect
+                                    ? "text-green-700"
+                                    : "text-red-700"
+                                }`}
+                              >
+                                {formatUserAnswer(userAnswer)}
+                              </div>
+                            </div>
+
+                            {isCorrect !== null && (
+                              <div className="bg-white rounded-lg p-3 border border-green-200">
+                                <div className="text-green-600 text-xs font-medium mb-1">
+                                  CORRECT ANSWER
                                 </div>
-                              );
-                            })}
+                                <div className="text-green-700 font-medium">
+                                  {correctAnswers.join(", ")}
+                                </div>
+                              </div>
+                            )}
                           </div>
-                        )}
 
-                        {question.question_type === "DESC" && (
-                          <div className="mt-2 p-3 bg-white rounded border border-gray-200">
-                            <p className="text-sm text-gray-600 mb-1">Your answer:</p>
-                            <p className="text-gray-900">{userAnswer || "(No answer provided)"}</p>
-                            <p className="text-xs text-gray-500 mt-2">
-                              This answer requires manual grading
-                            </p>
-                          </div>
-                        )}
-
-                        {question.explanation && (
-                          <div className="mt-3 p-3 bg-blue-50 rounded border border-blue-200">
-                            <p className="text-xs font-semibold text-blue-900 mb-1">
-                              Explanation:
-                            </p>
-                            <p className="text-sm text-blue-800">
-                              {question.explanation}
-                            </p>
-                          </div>
-                        )}
+                          {question.explanation && (
+                            <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                              <div className="text-blue-700 text-xs font-medium mb-1">
+                                EXPLANATION
+                              </div>
+                              <div className="text-blue-800 text-sm">
+                                {question.explanation}
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          {/* Action Button */}
+          <div className="text-center">
             <button
               onClick={handleBackToHome}
-              className="px-8 py-3 bg-cyan-600 hover:bg-cyan-700 text-white font-semibold rounded-lg transition-colors shadow-lg"
-              style={{ boxShadow: "4px 4px 0px 0px rgba(0, 0, 0, 1)" }}
+              className="inline-flex items-center gap-2 px-8 py-3 bg-[#217486] hover:bg-[#1c6574] text-white font-semibold rounded-xl shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200"
             >
               Back to Home
             </button>
