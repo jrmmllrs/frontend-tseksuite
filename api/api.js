@@ -137,3 +137,25 @@ export const deleteDepartment = async(deletingDept) => {
     toast.error(error)
   }
 }
+
+export const submitResults = async({results, examiner_id}) => {
+  try {
+
+    const body  = {
+      quiz_id: quiz_id,
+      examiner_id: examiner_id,
+      answers : [
+        { 
+          question_id : question_id,
+          answer_id : answer_id,
+        },
+      ],
+      status: 'COMPLETED'
+
+    }
+
+    await axios.post('url', body )
+  } catch (error) {
+    
+  }
+}

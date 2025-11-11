@@ -62,77 +62,80 @@ const CompletedTestResults = () => {
   };
 
   const saveResultsToBackend = async (results, applicantData) => {
-    try {
-      setSaving(true);
-      setSaveError(null);
+    // try {
+    //   setSaving(true);
+    //   setSaveError(null);
 
-      const resultData = {
-        examiner_id: applicantData.examiner_id || null,
-        quiz_id: results.quizData.quiz_id,
-        score: Math.round(results.score), // Round to integer since DB expects INTEGER
-        status: "COMPLETED", // Use ENUM value from database
-      };
+    //   const resultData = {
+    //     examiner_id: applicantData.examiner_id || null,
+    //     quiz_id: results.quizData.quiz_id,
+    //     score: Math.round(results.score), // Round to integer since DB expects INTEGER
+    //     status: "COMPLETED", // Use ENUM value from database
+    //   };
 
-      console.log("Sending result data:", resultData);
+    //   console.log("Sending result data:", resultData);
 
-      const response = await fetch(`${API_BASE_URL}/result/create`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(resultData),
-      });
-
-      const data = await response.json();
-      console.log("Server response:", data);
+    //   const response = await fetch(`${API_BASE_URL}/result/create`, {
+    //     method: "POST",
+    //     headers: {
+    //       "Content-Type": "application/json",
+    //     },
+    //     body: JSON.stringify(resultData),
+    //   });
       
-      // Log the full error structure
-      if (data.errors) {
-        console.log("Error details:", data.errors);
-        // Log each error object in detail
-        data.errors.forEach((err, index) => {
-          console.log(`Error ${index}:`, JSON.stringify(err, null, 2));
-        });
-      }
-      if (data.details) {
-        console.log("Details:", data.details);
-      }
+    //   // Log the full error structure
+    //   if (data.errors) {
+    //     console.log("Error details:", data.errors);
+    //     // Log each error object in detail
+    //     data.errors.forEach((err, index) => {
+    //       console.log(`Error ${index}:`, JSON.stringify(err, null, 2));
+    //     });
+    //   }
+    //   if (data.details) {
+    //     console.log("Details:", data.details);
+    //   }
 
-      if (response.ok) {
-        setResultSaved(true);
-        console.log("Results saved successfully!");
-      } else {
-        const errorMsg = data.message || "Failed to save results";
-        let errorDetails = "";
+    //   if (response.ok) {
+    //     setResultSaved(true);
+    //     console.log("Results saved successfully!");
+    //   } else {
+    //     const errorMsg = data.message || "Failed to save results";
+    //     let errorDetails = "";
         
-        // Handle errors array - it might contain objects
-        if (data.errors && Array.isArray(data.errors)) {
-          const errorMessages = data.errors.map(err => {
-            // If error is an object with message property
-            if (typeof err === 'object' && err.message) {
-              return err.message;
-            }
-            // If error is an object, stringify it
-            if (typeof err === 'object') {
-              return JSON.stringify(err);
-            }
-            // If error is a string
-            return err;
-          });
-          errorDetails = `: ${errorMessages.join(", ")}`;
-        } else if (data.details && Array.isArray(data.details)) {
-          errorDetails = `: ${data.details.join(", ")}`;
-        }
+    //     // Handle errors array - it might contain objects
+    //     if (data.errors && Array.isArray(data.errors)) {
+    //       const errorMessages = data.errors.map(err => {
+    //         // If error is an object with message property
+    //         if (typeof err === 'object' && err.message) {
+    //           return err.message;
+    //         }
+    //         // If error is an object, stringify it
+    //         if (typeof err === 'object') {
+    //           return JSON.stringify(err);
+    //         }
+    //         // If error is a string
+    //         return err;
+    //       });
+    //       errorDetails = `: ${errorMessages.join(", ")}`;
+    //     } else if (data.details && Array.isArray(data.details)) {
+    //       errorDetails = `: ${data.details.join(", ")}`;
+    //     }
         
-        console.error("Failed to save results:", errorMsg + errorDetails);
-        console.error("Full error object:", JSON.stringify(data, null, 2));
-        setSaveError(errorMsg + errorDetails);
-      }
+    //     console.error("Failed to save results:", errorMsg + errorDetails);
+    //     console.error("Full error object:", JSON.stringify(data, null, 2));
+    //     setSaveError(errorMsg + errorDetails);
+    //   }
+    // } catch (error) {
+    //   console.error("Error saving results:", error);
+    //   setSaveError(`Network error: ${error.message}`);
+    // } finally {
+    //   setSaving(false);
+    // }
+
+    try {
+      
     } catch (error) {
-      console.error("Error saving results:", error);
-      setSaveError(`Network error: ${error.message}`);
-    } finally {
-      setSaving(false);
+      
     }
   };
 
@@ -240,7 +243,7 @@ const CompletedTestResults = () => {
             {saveError && (
               <div className="mt-6 bg-red-50 border border-red-200 rounded-lg p-4">
                 <div className="flex items-start gap-3">
-                  <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                  <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
                   <div className="text-left flex-1">
                     <p className="text-sm font-semibold text-red-900 mb-1">
                       Failed to save results
