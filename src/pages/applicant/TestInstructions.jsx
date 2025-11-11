@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import Footer from "../../components/applicant/Footer";
 
 const TestInstructions = () => {
@@ -9,10 +9,12 @@ const TestInstructions = () => {
 
   useEffect(() => {
     // Get quiz data from navigation state or localStorage
-    const selectedQuiz = location.state?.selectedQuiz || 
+    const selectedQuiz =
+      location.state?.selectedQuiz ||
       JSON.parse(localStorage.getItem("selectedQuiz") || "null");
-    
-    const applicantData = location.state?.applicantData || 
+
+    const applicantData =
+      location.state?.applicantData ||
       JSON.parse(localStorage.getItem("applicantData") || "{}");
 
     if (!selectedQuiz || !applicantData.department) {
@@ -30,13 +32,17 @@ const TestInstructions = () => {
     navigate("/test-page", {
       state: {
         quizData,
-        applicantData: location.state?.applicantData
-      }
+        applicantData: location.state?.applicantData,
+      },
     });
   };
 
   const handleExit = () => {
-    if (window.confirm("Are you sure you want to exit? Your progress will not be saved.")) {
+    if (
+      window.confirm(
+        "Are you sure you want to exit? Your progress will not be saved."
+      )
+    ) {
       navigate("/");
     }
   };
@@ -48,7 +54,9 @@ const TestInstructions = () => {
     }
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
-    return mins > 0 ? `${hours} hour${hours > 1 ? 's' : ''} ${mins} minutes` : `${hours} hour${hours > 1 ? 's' : ''}`;
+    return mins > 0
+      ? `${hours} hour${hours > 1 ? "s" : ""} ${mins} minutes`
+      : `${hours} hour${hours > 1 ? "s" : ""}`;
   };
 
   return (
@@ -60,7 +68,7 @@ const TestInstructions = () => {
       <div className="flex-1 flex flex-col px-6 sm:px-8 lg:px-12 py-8 sm:py-12 lg:justify-center">
         <div className="w-full max-w-3xl lg:mx-auto">
           {/* Exit Button */}
-          <button 
+          <button
             onClick={handleExit}
             className="flex items-center gap-2 text-gray-800 hover:text-gray-600 transition-colors mb-8 sm:mb-12 lg:mb-16"
           >
