@@ -147,17 +147,7 @@ const QuestionModal = ({ isOpen, onClose, question, setQuestion, onSave }) => {
           </div>
         );
 
-      // case "DESC":
-      //   return (
-      //     <div className="p-4 bg-gray-50 rounded-lg">
-      //       <p className="text-sm text-gray-600">
-      //         Descriptive question - User will provide a text answer
-      //       </p>
-      //     </div>
-      //   );
-
       default:
-        // return null;
          return (
             <p className="text-gray-500 italic">
               Unsupported question type.
@@ -178,19 +168,18 @@ const QuestionModal = ({ isOpen, onClose, question, setQuestion, onSave }) => {
         ],
       }));
     } 
-    // else if (newType === "DESC") {
-    //   setQuestion((prev) => ({
-    //     ...prev,
-    //     options: [],
-    //   }));
-    // } 
-    else if (question.options.length === 0) {
+    else if (newType === "MC" || newType === "CB") {
       setQuestion((prev) => ({
         ...prev,
         options: [
           { option_text: "", is_correct: false },
           { option_text: "", is_correct: false },
         ],
+      }));
+    }else{
+      setQuestion((prev) => ({
+        ...prev,
+        options: [],
       }));
     }
   };
@@ -222,7 +211,6 @@ const QuestionModal = ({ isOpen, onClose, question, setQuestion, onSave }) => {
                 { value: "MC", label: "Multiple Choice" },
                 { value: "CB", label: "Checkbox" },
                 { value: "TF", label: "True/False" },
-                // { value: "DESC", label: "Descriptive" },
               ].map((type) => (
                 <button
                   key={type.value}
@@ -296,13 +284,13 @@ const QuestionModal = ({ isOpen, onClose, question, setQuestion, onSave }) => {
         <div className="p-6 border-t border-gray-200 flex justify-end gap-3">
           <button
             onClick={onClose}
-            className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+            className="px-6 py-2 border border-[#2E99B0] rounded-lg text-[#2E99B0] hover:bg-gray-50 transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={onSave}
-            className="px-6 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-colors"
+            className="px-6 py-2 bg-[#2E99B0] text-white rounded-lg hover:bg-teal-600 transition-colors"
           >
             Save Question
           </button>
@@ -564,7 +552,7 @@ const QuestionManagement = ({ quiz, onBack }) => {
 
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-3xl text-[#2E99B0]">
               {quiz?.quiz_name || "Question Bank"}
             </h1>
             <p className="text-gray-600 mt-1">Manage your test questions</p>
@@ -577,7 +565,9 @@ const QuestionManagement = ({ quiz, onBack }) => {
             Add Question
           </button>
         </div>
-
+        <div className="mb-5">
+          <p className="text-2xl">Questions</p>
+        </div>
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
             <p className="font-medium text-sm">Error</p>

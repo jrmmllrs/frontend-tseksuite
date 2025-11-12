@@ -192,7 +192,7 @@ const QuizManagement = ({ department, onBack }) => {
           className="flex items-center gap-2 text-gray-600 hover:text-gray-800 mb-6 transition-colors"
         >
           <ArrowLeft size={20} />
-          <span className="font-medium">Back to Categories</span>
+          <span className="font-medium">Back to Departments</span>
         </button>
 
         <div className="mb-8">
@@ -207,7 +207,7 @@ const QuizManagement = ({ department, onBack }) => {
               className="flex items-center gap-2 bg-[#2E99B0] text-white px-5 py-2.5 rounded-lg transition-colors shadow-sm hover:bg-cyan-700"
             >
               <Plus size={20} />
-              <span className="font-medium">Add Test Categories</span>
+              <span className="font-medium">Add Quiz</span>
             </button>
           </div>
         </div>
@@ -259,7 +259,7 @@ const QuizManagement = ({ department, onBack }) => {
                     }}
                     className="text-gray-400 hover:text-gray-600 p-1 rounded hover:bg-gray-100 transition-colors"
                   >
-                    <MoreVertical size={20} />
+                    <MoreVertical size={26} />
                   </button>
                   {openMenuId === quiz.quiz_id && (
                     <div className="absolute right-5 top-14 w-40 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-20">
