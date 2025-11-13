@@ -271,7 +271,7 @@ function ResultsPage() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl sm:text-4xl font-bold text-[#217486] mb-2 tracking-tight">
+          <h1 className="text-3xl sm:text-3xl text-cyan-700 mb-2 tracking-tight">
             Test Results
           </h1>
           <p className="text-slate-600 text-sm">
@@ -280,7 +280,7 @@ function ResultsPage() {
         </div>
 
         {/* Controls */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 mb-6">
+        <div className="mb-6">
           <div className="flex flex-col sm:flex-row gap-3">
             {/* Search */}
             <div className="relative flex-1">
@@ -424,14 +424,14 @@ function ResultsPage() {
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="bg-gradient-to-r from-[#217486] to-[#1a5d6d] text-white">
+                    <tr className="bg-cyan-700 text-white">
                       <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider">
                         ID
                       </th>
                       <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider">
                         Examinee
                       </th>
-                      <th className="px-11 py-4 text-left text-xs font-semibold uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider">
                         Department
                       </th>
                       <th className="px-8 py-4 text-left text-xs font-semibold uppercase tracking-wider">
@@ -584,7 +584,7 @@ function ResultsPage() {
                           onClick={() => handlePageChange(pageNumber)}
                           className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
                             currentPage === pageNumber
-                              ? "bg-[#217486] text-white"
+                              ? "bg-cyan-700 text-white"
                               : "text-slate-700 hover:bg-slate-100"
                           }`}
                         >

@@ -368,7 +368,7 @@ const TestPage = () => {
           </div>
 
           <div className="mb-8 sm:mb-10">
-            <div className="flex items-center gap-3 mb-6">
+            <div className="flex items-center gap-3 mb-20">
               <h1 className="text-2xl sm:text-3xl font-semibold text-gray-900">
                 {getQuestionTypeLabel(currentQuestion.question_type)}
               </h1>
@@ -376,7 +376,7 @@ const TestPage = () => {
                 &gt; Question {currentQuestionIndex + 1} / {questions.length}
               </span>
             </div>
-            <p className="text-gray-900 text-base sm:text-lg leading-relaxed">
+            <p className="text-gray-900 text-base sm:text-3xl leading-relaxed">
               {currentQuestion.question_text}
             </p>
           </div>
