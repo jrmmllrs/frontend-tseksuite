@@ -36,7 +36,7 @@ const LoginForm = () => {
 
     if (data.isSuccess) {
       toast.success(data.message);
-      navigate("/admin/");
+      navigate("/admin/dashboard");
     } else {
       toast.error(data.message);
     }

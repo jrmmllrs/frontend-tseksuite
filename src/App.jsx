@@ -21,6 +21,7 @@ import ErrorMessage from "./pages/admin/ErrorMessage";
 import TestInstructions from "./pages/applicant/TestInstructions";
 import TestBuilderPage from "./pages/admin/AssesmentsTab/TestBuilderPage";
 import AbandonTracker from "./components/AbandonTracker";
+import AbandonedTestScreen from "./pages/applicant/AbandonTestScreen";
 
 function App() {
   return (
@@ -34,6 +35,7 @@ function App() {
         <Route path="/take-quiz/:token" element={<ApplicantOnboardingPage />} />
         <Route path="/test-instructions" element={<TestInstructions />} />
         <Route path="/completed-test" element={<CompletedTestResults />} />
+         <Route path="/abandoned" element={<AbandonedTestScreen />} />
         {/* This is the start of monitoring */}
         <Route
           path="/test-page"

@@ -23,6 +23,9 @@ const TestInstructions = () => {
       return;
     }
 
+    console.log('Selected Quiz:', selectedQuiz)
+    console.log('Applicant Data', applicantData)
+
     setQuizData(selectedQuiz);
   }, []);
 
@@ -123,7 +126,7 @@ const TestInstructions = () => {
             <div className="space-y-2 sm:space-y-3 mb-8 sm:mb-10 lg:mb-12">
               <div className="flex items-center gap-2 sm:gap-3">
                 <svg
-                  className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 text-gray-800"
+                  className="w-4 h-4 sm:w-5 sm:h-5 shrink-0 text-gray-800"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -142,7 +145,7 @@ const TestInstructions = () => {
 
               <div className="flex items-center gap-2 sm:gap-3">
                 <svg
-                  className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 text-gray-800"
+                  className="w-4 h-4 sm:w-5 sm:h-5 shrink-0 text-gray-800"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -161,7 +164,7 @@ const TestInstructions = () => {
 
               <div className="flex items-center gap-2 sm:gap-3">
                 <svg
-                  className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 text-gray-800"
+                  className="w-4 h-4 sm:w-5 sm:h-5 shrink-0 text-gray-800"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -180,7 +183,7 @@ const TestInstructions = () => {
 
               <div className="flex items-center gap-2 sm:gap-3">
                 <svg
-                  className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 text-gray-800"
+                  className="w-4 h-4 sm:w-5 sm:h-5 shrink-0 text-gray-800"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"

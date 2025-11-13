@@ -137,7 +137,7 @@ const CompletedTestResults = () => {
       <div className="flex-1 px-4 py-6">
         <div className="max-w-4xl mx-auto">
           {/* Main Header Card */}
-          <div className="bg-gradient-to-r from-[#217486] to-[#2c8fa3] rounded-2xl shadow-lg p-6 mb-6 text-white">
+          <div className="bg-linear-to-r from-[#217486] to-[#2c8fa3] rounded-2xl shadow-lg p-6 mb-6 text-white">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h1 className="text-2xl font-bold">{quizData.quiz_name}</h1>

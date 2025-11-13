@@ -412,7 +412,7 @@ const TestPage = () => {
                     <div className="flex items-start gap-3">
                       {currentQuestion.question_type === "CB" ? (
                         <div
-                          className={`w-5 h-5 flex-shrink-0 mt-0.5 rounded border-2 flex items-center justify-center ${
+                          className={`w-5 h-5 shrink-0 mt-0.5 rounded border-2 flex items-center justify-center ${
                             isSelected
                               ? "bg-cyan-600 border-cyan-600"
                               : "border-gray-400"
@@ -436,7 +436,7 @@ const TestPage = () => {
                         </div>
                       ) : (
                         <div
-                          className={`w-5 h-5 flex-shrink-0 mt-0.5 rounded-full border-2 flex items-center justify-center ${
+                          className={`w-5 h-5 shrink-0 mt-0.5 rounded-full border-2 flex items-center justify-center ${
                             isSelected ? "border-cyan-600" : "border-gray-400"
                           }`}
                         >
