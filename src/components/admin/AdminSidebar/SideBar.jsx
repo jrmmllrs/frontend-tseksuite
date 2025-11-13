@@ -58,7 +58,7 @@ const AdminSidebar = () => {
             items={[
               {
                 icon: <Layers2 className="h-4 w-4 hidden sm:flex" />,
-                label: "Tests",
+                label: "Examinee List",
                 to: "/admin/examiners/tests",
               },
               {

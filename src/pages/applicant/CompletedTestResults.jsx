@@ -141,25 +141,19 @@ const CompletedTestResults = () => {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h1 className="text-2xl font-bold">{quizData.quiz_name}</h1>
-                <p className="text-white/80 text-sm">
-                  Test Completed Successfully
-                </p>
+
               </div>
               <div className="flex items-center gap-2 bg-white/20 px-3 py-1 rounded-full">
                 <span className="text-sm font-medium">Completed</span>
               </div>
             </div>
 
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-start">
               <div className="flex items-baseline gap-3">
                 <div className="text-5xl font-black">{percentage}%</div>
                 <div className="text-white/80 text-lg">/ 100%</div>
               </div>
-              <div
-                className={`px-4 py-2 rounded-full ${performance.bg} ${performance.color} font-bold text-sm`}
-              >
-                {performance.level}
-              </div>
+         
             </div>
           </div>
 
@@ -167,57 +161,33 @@ const CompletedTestResults = () => {
           <div className="grid grid-cols-3 gap-4 mb-6">
             <div className="bg-white border border-gray-200 rounded-xl p-4 text-center shadow-sm hover:shadow-md transition-shadow">
               <Trophy className="w-8 h-8 text-amber-500 mx-auto mb-2" />
-              <div className="text-2xl font-bold text-gray-900">
+              <div className="text-xl font-bold text-gray-900">
                 {resultData.score}/{resultData.max_score}
               </div>
-              <div className="text-gray-600 text-sm">Points</div>
+              <div className="text-[#2E99B0] text-sm">Points</div>
             </div>
-            <div className="bg-white border border-gray-200 rounded-xl p-4 text-center shadow-sm hover:shadow-md transition-shadow">
-              <FileText className="w-8 h-8 text-[#217486] mx-auto mb-2" />
-              <div className="text-2xl font-bold text-gray-900">
-                {questions.length}
-              </div>
-              <div className="text-gray-600 text-sm">Questions</div>
-            </div>
-            <div className="bg-white border border-gray-200 rounded-xl p-4 text-center shadow-sm hover:shadow-md transition-shadow">
-              <Clock className="w-8 h-8 text-purple-500 mx-auto mb-2" />
-              <div className="text-2xl font-bold text-gray-900">
-                {quizData.time_limit}
-              </div>
-              <div className="text-gray-600 text-sm">Minutes</div>
-            </div>
-          </div>
-
-          {/* Additional Stats */}
-          <div className="grid grid-cols-3 gap-4 mb-6">
+        
             <div className="bg-white border border-gray-200 rounded-xl p-4 text-center shadow-sm">
               <CheckCircle2 className="w-6 h-6 text-green-600 mx-auto mb-2" />
               <div className="text-xl font-bold text-green-600">
                 {correctAnswers}
               </div>
-              <div className="text-gray-600 text-sm">Correct</div>
+              <div className="text-[#2E99B0] text-sm">Correct</div>
             </div>
             <div className="bg-white border border-gray-200 rounded-xl p-4 text-center shadow-sm">
               <XCircle className="w-6 h-6 text-red-600 mx-auto mb-2" />
               <div className="text-xl font-bold text-red-600">
                 {incorrectAnswers}
               </div>
-              <div className="text-gray-600 text-sm">Incorrect</div>
-            </div>
-            <div className="bg-white border border-gray-200 rounded-xl p-4 text-center shadow-sm">
-              <AlertCircle className="w-6 h-6 text-amber-600 mx-auto mb-2" />
-              <div className="text-xl font-bold text-amber-600">
-                {descriptiveQuestions}
-              </div>
-              <div className="text-gray-600 text-sm">For Review</div>
+              <div className="text-[#2E99B0] text-sm">Incorrect</div>
             </div>
           </div>
 
           {/* Detailed Results */}
           <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 mb-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <Award className="w-5 h-5 text-[#217486]" />
-              Detailed Results
+            <h2 className="text-xl text-gray-900 mb-4 flex items-center gap-2">
+              <Award className="w-5 h-5 text-[#2E99B0]" />
+              <p className="text-[#2E99B0]">Quiz Summary</p>
             </h2>
 
             <div className="space-y-4">
@@ -312,19 +282,7 @@ const CompletedTestResults = () => {
                           </div>
                         )}
 
-                        {/* Descriptive Answer Note */}
-                        {question.question_type === "DESC" &&
-                          isCorrect === null && (
-                            <div className="mt-3 p-3 bg-amber-50 rounded-lg border border-amber-200">
-                              <div className="text-amber-700 text-xs font-medium mb-1">
-                                NOTE
-                              </div>
-                              <div className="text-amber-800 text-sm">
-                                This descriptive answer will be reviewed
-                                manually by the administrator.
-                              </div>
-                            </div>
-                          )}
+
                       </div>
                     </div>
                   </div>
