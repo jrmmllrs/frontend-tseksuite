@@ -187,14 +187,17 @@ function DepartmentCard({
   };
 
   return (
-    <div
-      onClick={setSelectedDepartment}
-      className={`bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 relative overflow-hidden cursor-pointer group ${
-        dept.is_active
-          ? "border-2 border-gray-100"
-          : "border-2 border-gray-200 opacity-60"
-      }`}
-    >
+        <div
+          onClick={dept.is_active ? setSelectedDepartment : undefined}
+          className={`bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 relative overflow-hidden ${
+            dept.is_active ? "cursor-pointer" : "cursor-default"
+          } group ${
+            dept.is_active
+              ? "border-2 border-gray-100"
+              : "border-2 border-gray-200 opacity-60"
+          }`}
+        >
+
       {/* Gradient Accent Bar */}
       <div className={`h-1.5 w-full bg-gradient-to-r from-[#217486] to-[#2a8fa5] ${!dept.is_active && 'opacity-50'}`}></div>
 
@@ -225,7 +228,7 @@ function DepartmentCard({
                   onClick={onDeactivateClicked}
                   className={`flex items-center gap-3 w-full px-4 py-2.5 text-sm text-left transition-colors ${
                     dept.is_active
-                      ? "text-orange-600 hover:bg-orange-50"
+                      ? "text-orange-600 hover:bg-orange-50" 
                       : "text-green-600 hover:bg-green-50"
                   }`}
                 >
