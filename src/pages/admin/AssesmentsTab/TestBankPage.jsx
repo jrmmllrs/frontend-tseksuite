@@ -15,6 +15,7 @@ import DeactivateDepartment from "../../../components/admin/modals/DeactivateDep
 import DeleteDepartment from "../../../components/admin/modals/DeleteDepartment";
 import AddDepartment from "../../../components/admin/modals/AddDepartment";
 import EditDepartment from "../../../components/admin/modals/EditDepartment";
+import toast from "react-hot-toast";
 
 const TestBankPage = () => {
   // State
@@ -79,10 +80,13 @@ const TestBankPage = () => {
     try {
       await toggleDepartmentActiveStatus(department);
       await fetchDepartments();
+      //added toast!
+      toast.success("Department Status Updated!")
       setError(null);
     } catch (err) {
       console.error("Error toggling status:", err);
       setError(err.response?.data?.message || "Failed to update status");
+      toast.error("Department Update Status Failed")
     }
   };
 
@@ -91,10 +95,13 @@ const TestBankPage = () => {
     try {
       await addDepartment(newDeptName);
       await fetchDepartments();
+      //added toast
+      toast.success("Department Added!")
       closeAllModals();
     } catch (err) {
       console.error("Error creating department:", err);
       setError(err.response?.data?.message || "Failed to create department");
+      toast.error("Department Creation Failed!")
     }
   };
 
@@ -103,10 +110,13 @@ const TestBankPage = () => {
     try {
       await editDepartment(editingDept);
       await fetchDepartments();
+      //added toast
+      toast.success("Department Updated!")
       closeAllModals();
     } catch (err) {
       console.error("Error updating department:", err);
       setError(err.response?.data?.message || "Failed to update department");
+      toast.error("De[artment Update Failed!")
     }
   };
 
@@ -115,10 +125,12 @@ const TestBankPage = () => {
     try {
       await deleteDepartment(deletingDept);
       await fetchDepartments();
+      toast.success("Department Deleted Successfully!")
       closeAllModals();
     } catch (err) {
       console.error("Error deleting department:", err);
       setError(err.response?.data?.message || "Failed to delete department");
+      toast.error("Department Deletion Failed!")
     }
   };
 

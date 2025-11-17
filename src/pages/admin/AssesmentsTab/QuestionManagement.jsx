@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Clock, Plus, Edit2, Trash2, X, ArrowLeft, CheckCircle, Circle } from "lucide-react";
+import toast from "react-hot-toast";
 
 const API_BASE_URL = "http://localhost:3000/api";
 
@@ -349,23 +350,40 @@ const QuestionManagement = ({ quiz, onBack }) => {
       await axios.delete(
         `${API_BASE_URL}/question/${quiz.quiz_id}/delete/${question.question_id}`
       );
+      //added toast
+      toast.success("Question Deleted!")
       setDeleteModalOpen(false);
       fetchQuestions();
     } catch (err) {
       console.error("Delete error:", err);
+      toast.error("Question Deletion Failed!")
     }
   };
 
   const handleSave = async () => {
     const q = currentQuestion;
-    if (!q.question_text.trim()) return alert("Question text required");
+    if (!q.question_text.trim()) return toast.error("Question text required");
+
+    //added to check if the options are empty
+    if ((q.question_type === "MC" || q.question_type === "CB")) {
+    if (!q.options || q.options.length < 2) {
+      return toast.error("At least 2 options are required");
+    }
+    // Also check that all options have text
+    for (let i = 0; i < q.options.length; i++) {
+      if (!q.options[i].option_text.trim()) {
+        return toast.error(`All options must have text!`);
+      }
+    }
+  }
 
     if (editingIndex !== null) {
       await axios.put(
         `${API_BASE_URL}/question/${quiz.quiz_id}/update/${q.question_id}`,
         q
       );
-
+      //added updated toast
+      toast.success("Question Updated!")
       const original = questions[editingIndex];
       const originalIds = original.options
         .map((o) => o.answer_id)
@@ -377,6 +395,7 @@ const QuestionManagement = ({ quiz, onBack }) => {
             `${API_BASE_URL}/answer/${opt.answer_id}/update`,
             opt
           );
+          
         } else {
           await axios.post(
             `${API_BASE_URL}/answer/${q.question_id}/create`,
@@ -395,12 +414,13 @@ const QuestionManagement = ({ quiz, onBack }) => {
         `${API_BASE_URL}/question/${quiz.quiz_id}/create`,
         q
       );
+      //added toast
+      toast.success("Question Added!")
       const newId = res.data.data.question_id;
       for (const opt of q.options) {
         await axios.post(`${API_BASE_URL}/answer/${newId}/create`, opt);
       }
     }
-
     setModalOpen(false);
     fetchQuestions();
   };

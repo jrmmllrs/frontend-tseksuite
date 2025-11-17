@@ -15,6 +15,7 @@ import {
   Users,
 } from "lucide-react";
 import QuestionManagement from "./QuestionManagement";
+import toast from "react-hot-toast";
 
 const QuizManagement = ({ department, onBack }) => {
   const [quizzes, setQuizzes] = useState([]);
@@ -82,11 +83,13 @@ const QuizManagement = ({ department, onBack }) => {
 
       await fetchQuizzes();
       setNewQuiz({ quiz_name: "", time_limit: "" });
+      toast.success("Quiz Added!");
       setShowAddModal(false);
       setError(null);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to create quiz");
       console.error("Error creating quiz:", err);
+      toast.error("Quiz Creation Failed!");
     }
   };
 
@@ -108,30 +111,32 @@ const QuizManagement = ({ department, onBack }) => {
       );
 
       await fetchQuizzes();
+      toast.success("Quiz Updated!");
       setShowEditModal(false);
       setEditingQuiz(null);
       setError(null);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to update quiz");
       console.error("Error updating quiz:", err);
+      toast.error("Quiz Update Failed!");
     }
   };
 
   const handleDeleteQuiz = async () => {
     if (!deletingQuiz) return;
-
     try {
       await axios.delete(
         `${API_BASE_URL}/${department.dept_id}/delete/${deletingQuiz.quiz_id}`
       );
-
       await fetchQuizzes();
+      toast.success("Quiz Deleted!");
       setShowDeleteModal(false);
       setDeletingQuiz(null);
       setError(null);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to delete quiz");
       console.error("Error deleting quiz:", err);
+      toast.error("Quiz Deletion Failed!")
     }
   };
 
@@ -343,6 +348,8 @@ const QuizManagement = ({ department, onBack }) => {
                         e.stopPropagation();
                         openInviteModal(quiz);
                       }}
+                      //added disabled if there is no existing question
+                      // disabled={}
                       className="flex-1 flex items-center justify-center gap-2 bg-[#217486] hover:bg-[#1a5d6d] text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-all shadow-md shadow-[#217486]/30"
                     >
                       <LinkIcon className="w-4 h-4" />
