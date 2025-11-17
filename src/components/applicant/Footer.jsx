@@ -8,7 +8,7 @@ const Footer = ({
   padding = "py-3.5"
 }) => {
   return (
-    <div className={`${bgColor} ${textColor} text-center ${padding} ${className}`}>
+    <div className={`${bgColor} ${textColor} text-center ${padding} ${className} w-full`}>
       <p className={textSize}>Copyright {copyrightYear} @ {companyName}</p>
     </div>
   );

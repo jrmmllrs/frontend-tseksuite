@@ -291,12 +291,7 @@ function ResultsPage() {
 
       <div className="min-h-screen bg-white px-4 sm:px-6 lg:px-8 py-8 mt-15 sm:mt-0">
         <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl sm:text-3xl text-cyan-700 mb-2 tracking-tight">
-              Test Results
-            </h1>
-          </div>
+        
           {/* Controls */}
           <div className="mb-6">
             <div className="flex flex-col sm:flex-row gap-3">

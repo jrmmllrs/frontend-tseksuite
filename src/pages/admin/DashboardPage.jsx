@@ -68,13 +68,11 @@ function DashboardPage() {
   if (isError || !user) return <div>Failed to load user</div>;
 
   return (
-    <div className="h-screen w-full pb-3 sm:px-6 md:px-1 py-6 sm:mt-0">
-      {/* Header */}
+    <div className="h-screen w-full pb-3 sm:px-6 md:px-43 py-6 sm:mt-0 ">
       <h1 className="text-3xl sm:text-3xl text-cyan-700 mb-2 tracking-tight mt-1 ">
         Dashboard
       </h1>
 
-      {/* Cards */}
       <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-4 lg:gap-15 sm:mb-8">
         <DashboardCard title="Examinees" value={examiners.length} />
         <DashboardCard

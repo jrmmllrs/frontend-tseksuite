@@ -41,9 +41,9 @@ function App() {
         <Route
           path="/test-page"
           element={
-            <AbandonTracker>
+            // <AbandonTracker>
               <ApplicantTestPage />
-            </AbandonTracker>
+            // </AbandonTracker>
           }
         />
         {/* End of Monitoring */}
@@ -52,7 +52,7 @@ function App() {
         {/* /admin protected routes */}
         <Route element={<AdminProtectedRoutes />}>
           <Route path="admin" element={<MainLayout />}>
-            <Route path="dashboard" element={<DashboardPage />} />
+            <Route index path="dashboard" element={<DashboardPage />} />
 
             {/* examiners submenu route */}
             <Route path="examiners/exams" element={ <ExamsDashboard/> }/>
