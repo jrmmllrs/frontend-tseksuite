@@ -3,8 +3,9 @@ import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import ClockIcon from "../../assets/Clock.svg";
 import Footer from "../../components/applicant/Footer";
+import { Breadcrumbs, Stack, Link, Typography } from '@mui/material'
 
-const TestPage = () => {
+const ApplicantTestPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -18,6 +19,7 @@ const TestPage = () => {
   const [quizData, setQuizData] = useState(null);
   const [applicantData, setApplicantData] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [percentage, setPercentage] = useState(50)
 
   const API_BASE_URL = "http://localhost:3000/api";
 
@@ -63,6 +65,14 @@ const TestPage = () => {
       handleTimeUp();
     }
   }, [timeRemaining, loading, isSubmitting]);
+
+  useEffect(() => {
+  if (questions.length > 0) {
+    const percent = ((currentQuestionIndex + 1) / questions.length) * 100;
+    setPercentage(percent);
+  }
+}, [currentQuestionIndex, questions]);
+
 
   const fetchQuestions = async (quizId) => {
     try {
@@ -329,71 +339,86 @@ const TestPage = () => {
 
   const currentQuestion = questions[currentQuestionIndex];
 
+  const breadcrumbs = [
+    <Typography underline="hover" key="1" color="inherit" sx={{ fontSize:{
+       xs:15,
+      sm:20,
+      md:25
+    }}} fontSize={25}>
+      { getQuestionTypeLabel(currentQuestion.question_type) }
+    </Typography>,
+    <Typography key="2" sx={{ color: '#2E99B0', fontSize:{
+      xs:15,
+      sm:20,
+      md:25
+    } }} >
+      Question {currentQuestionIndex + 1} / {questions.length}
+    </Typography>
+  ];
+
   return (
     <div
-      className="min-h-screen bg-white flex flex-col"
+      className="min-h-screen bg-white flex flex-col justify-between"
       style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
     >
-      <div className="flex-1 px-6 sm:px-8 lg:px-16 py-8 sm:py-12">
-        <div className="max-w-5xl mx-auto">
-          <div className="flex items-center justify-between mb-10 sm:mb-12">
-            <button
-              onClick={handleBackToHome}
-              className="flex items-center gap-2 text-gray-900 hover:text-gray-600 transition-colors"
-            >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
-                />
-              </svg>
-              <span className="font-normal text-base">Exit Test</span>
-            </button>
+      <div className="sticky top-0 h-1 bg-[#2E99B0] transition-all duration-300 ease-out"style={{ width: `${percentage}%` }}/>
+        
+          <div className="flex items-center justify-between mt-10 md:mt-10 mb-10 sm:mb-12 mx-5 sm:mx-18 lg:mx-45 xl:mx-115">
+                <button
+                  onClick={handleBackToHome}
+                  className="flex items-center gap-2 text-gray-900 hover:text-gray-600 transition-colors"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                    />
+                  </svg>
+                  <span className="font-normal text-base">Exit Test</span>
+                </button>
 
-            <div
-              className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-black rounded-lg transition-colors duration-200"
-              style={{ boxShadow: "2px 2px 0px 0px rgba(0, 0, 0, 1)" }}
-            >
-              <img src={ClockIcon} className="w-5 h-5" alt="clock" />
-              <span className="font-semibold text-gray-900 text-lg">
-                {formatTime(timeRemaining)}
-              </span>
+                <div
+                  className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-black rounded-lg transition-colors duration-200"
+                  style={{ boxShadow: "2px 2px 0px 0px rgba(0, 0, 0, 1)" }}
+                >
+                  <img src={ClockIcon} className="w-5 h-5" alt="clock" />
+                  <span className="font-semibold text-gray-900 text-lg">
+                    {formatTime(timeRemaining)}
+                  </span>
             </div>
+      </div>
+
+      
+
+      {/* Main Content */}
+      
+      <div className="flex flex-col justify-center mx-5 sm:mx-10 lg:mx-30 xl:mx-100 sm:px-8 lg:px-16 py-8 sm:py-12">
+
+         {/* Header */}
+          
+          <div className="flex flex-col mb-5 gap-10"> 
+
+
+         <Stack spacing={2} className="mb-10 sm:mb-10">
+           <Breadcrumbs separator=">">
+           { breadcrumbs }
+          </Breadcrumbs>
+          <Typography key="2" sx={{ color: 'text-base' }}fontSize={25} fontWeight={'bold'}>
+            {currentQuestion.question_text}
+          </Typography>
+         </Stack>
           </div>
 
-          <div className="mb-8 sm:mb-10">
-            <div className="flex items-center gap-3 mb-20">
-              <h1 className="text-2xl sm:text-3xl font-semibold text-gray-900">
-                {getQuestionTypeLabel(currentQuestion.question_type)}
-              </h1>
-              <span className="text-cyan-600 font-normal text-lg sm:text-xl">
-                &gt; Question {currentQuestionIndex + 1} / {questions.length}
-              </span>
-            </div>
-            <p className="text-gray-900 text-base sm:text-3xl leading-relaxed">
-              {currentQuestion.question_text}
-            </p>
-          </div>
-
-          {currentQuestion.question_type === "DESC" ? (
-            <div className="mb-16 sm:mb-20">
-              <textarea
-                value={selectedAnswer || ""}
-                onChange={(e) => setSelectedAnswer(e.target.value)}
-                placeholder="Type your answer here..."
-                rows={8}
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 resize-none"
-              />
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-16 sm:mb-20">
+      
+            <div className="flex flex-col gap-10">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-16 sm:mb-20">
               {currentQuestion.options.map((option) => {
                 const isSelected =
                   currentQuestion.question_type === "CB"
@@ -452,7 +477,6 @@ const TestPage = () => {
                 );
               })}
             </div>
-          )}
 
           <div className="flex justify-end">
             <button
@@ -490,7 +514,7 @@ const TestPage = () => {
               )}
             </button>
           </div>
-        </div>
+            </div>
       </div>
 
       <Footer />
@@ -498,4 +522,4 @@ const TestPage = () => {
   );
 };
 
-export default TestPage;
+export default ApplicantTestPage;
