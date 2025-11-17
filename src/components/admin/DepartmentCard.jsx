@@ -27,7 +27,7 @@ function DepartmentCard({
 
     const images = {
       finance: (
-        <svg viewBox="0 0 200 120" className="w-full h-28">
+        <svg viewBox="0 0 200 120" className="w-full h-18">
           <defs>
             <linearGradient
               id="financeGrad"
@@ -73,7 +73,7 @@ function DepartmentCard({
         </svg>
       ),
       engineering: (
-        <svg viewBox="0 0 200 120" className="w-full h-28">
+        <svg viewBox="0 0 200 120" className="w-full h-18">
           <defs>
             <linearGradient id="engGrad" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="#217486" />
@@ -139,7 +139,7 @@ function DepartmentCard({
         </svg>
       ),
       business: (
-        <svg viewBox="0 0 200 120" className="w-full h-28">
+        <svg viewBox="0 0 200 120" className="w-full h-18">
           <defs>
             <linearGradient id="bizGrad" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="#217486" />
@@ -189,17 +189,17 @@ function DepartmentCard({
   return (
         <div
           onClick={dept.is_active ? setSelectedDepartment : undefined}
-          className={`bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 relative overflow-hidden ${
+          className={`bg-white rounded-4xl shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 relative overflow-hidden ${
             dept.is_active ? "cursor-pointer" : "cursor-default"
           } group ${
             dept.is_active
               ? "border-2 border-gray-100"
-              : "border-2 border-gray-200 opacity-60"
+              : "border-2 border-gray-200 opacity-50"
           }`}
         >
 
       {/* Gradient Accent Bar */}
-      <div className={`h-1.5 w-full bg-gradient-to-r from-[#217486] to-[#2a8fa5] ${!dept.is_active && 'opacity-50'}`}></div>
+      {/* <div className={`h-1.5 w-full bg-gradient-to-r from-[#217486] to-[#2a8fa5] ${!dept.is_active && 'opacity-50'}`}></div> */}
 
       <div className="p-5">
         {/* Header with Status and Menu */}
@@ -256,14 +256,14 @@ function DepartmentCard({
         </div>
 
         {/* Department Icon */}
-        <div className="flex justify-center mb-4 transform group-hover:scale-105 transition-transform duration-300">
+        <div className="flex justify-center mb-4 transform group-hover:scale-120 transition-transform duration-300">
           {getImageForType(dept.dept_name)}
         </div>
 
         {/* Department Name */}
-        <div className="text-center">
+        <div className="text-center ">
           <h3
-            className={`text-lg font-bold mb-1 ${
+            className={`text-lg mb-1 ${
               dept.is_active ? "text-[#217486]" : "text-gray-500"
             }`}
           >

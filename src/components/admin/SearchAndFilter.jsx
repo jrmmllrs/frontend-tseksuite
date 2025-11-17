@@ -26,7 +26,7 @@ function SearchAndFilter({
             <div className="flex gap-2">
               <button
                 onClick={ () => onFilterClicked('all') }
-                className={`px-3 lg:px-4 py-2 text-sm lg:text-base rounded-lg font-medium transition-all ${
+                className={`px-3 lg:px-4 py-2 text-sm lg:text-base rounded-2xl font-medium transition-all ${
                   filterActive === "all"
                     ? "bg-cyan-600 text-white shadow-md"
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -36,9 +36,9 @@ function SearchAndFilter({
               </button>
               <button
                 onClick={() => onFilterClicked('active') }
-                className={`px-3 lg:px-4 py-2 text-sm lg:text-base rounded-lg font-medium transition-all ${
+                className={`px-3 lg:px-4 py-2 text-sm lg:text-base rounded-2xl font-medium transition-all ${
                   filterActive === "active"
-                    ? "bg-green-500 text-white shadow-md"
+                    ? "bg-green-700 text-white shadow-md"
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                 }`}
               >
@@ -46,7 +46,7 @@ function SearchAndFilter({
               </button>
               <button
                 onClick={ () => onFilterClicked('inactive') }
-                className={`px-3 lg:px-4 py-2 text-sm lg:text-base rounded-lg font-medium transition-all ${
+                className={`px-3 lg:px-4 py-2 text-sm lg:text-base rounded-2xl font-medium transition-all ${
                   filterActive === "inactive"
                     ? "bg-red-500 text-white shadow-md"
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"

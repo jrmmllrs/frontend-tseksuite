@@ -160,7 +160,7 @@ const TestBankPage = () => {
     <div className="min-h-screen bg-white px-6 py-6 mt-20 mb-10 sm:mb-0 sm:mt-0">
       <div className="max-w-7xl mx-auto">
         {/* Header Section */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+        <div className="bg-white rounded-2xl shadow-lg p-6 mb-15">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
             <div className="flex items-center gap-3">
               <div>
@@ -180,7 +180,7 @@ const TestBankPage = () => {
           </div>
 
           {/* Search and Filter */}
-          <div className="mt-6">
+          <div className="mt-4">
             <SearchAndFilter
               searchTerm={searchTerm}
               filterActive={filterActive}

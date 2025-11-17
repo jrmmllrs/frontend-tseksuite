@@ -244,7 +244,7 @@ function TestsPage() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-4 sm:mb-6 lg:mb-8">
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl text-cyan-700 mb-1 sm:mb-2 tracking-tight font-bold">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl text-cyan-700 mb-1 sm:mb-2 tracking-tight">
             Examinees
           </h1>
           <p className="text-slate-600 text-xs sm:text-sm">
