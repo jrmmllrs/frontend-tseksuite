@@ -1,3 +1,4 @@
+
 import { X } from "lucide-react";
 
 function FilterPanel({
@@ -7,16 +8,17 @@ function FilterPanel({
   activeFilterCount,
   onFilterChange,
   onClearFilters,
+  isMobile,
 }) {
   return (
-    <div className="mt-4 pt-4 border-t border-slate-100">
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3">
-        {/* Department Select - Full width on mobile, then adjusts */}
-        <div className="md:col-span-1">
+    <div className="pt-3 sm:pt-4 border-t border-slate-100">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 sm:gap-3">
+        {/* Department Select */}
+        <div className="sm:col-span-1">
           <select
             value={filters.department}
             onChange={(e) => onFilterChange("department", e.target.value)}
-            className="w-full border border-slate-200 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#217486]/30 focus:border-[#217486]"
+            className="w-full border border-slate-200 p-2 sm:p-2.5 rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#217486]/30 focus:border-[#217486] bg-white"
           >
             <option value="">All Departments</option>
             {uniqueDepartments.map((dept) => (
@@ -27,12 +29,12 @@ function FilterPanel({
           </select>
         </div>
 
-        {/* Quiz Select - Full width on mobile, then adjusts */}
-        <div className="md:col-span-1">
+        {/* Quiz Select */}
+        <div className="sm:col-span-1">
           <select
             value={filters.quiz}
             onChange={(e) => onFilterChange("quiz", e.target.value)}
-            className="w-full border border-slate-200 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#217486]/30 focus:border-[#217486]"
+            className="w-full border border-slate-200 p-2 sm:p-2.5 rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#217486]/30 focus:border-[#217486] bg-white"
           >
             <option value="">All Quizzes</option>
             {uniqueQuizzes.map((quiz) => (
@@ -43,38 +45,39 @@ function FilterPanel({
           </select>
         </div>
 
-        {/* Spacer - Only visible on XL screens */}
-        <div className="hidden xl:block"></div>
+        {/* Spacer - Only visible on large screens */}
+        <div className="hidden lg:block"></div>
 
-        {/* Date Inputs - Stack on mobile, side by side on medium+, individual on XL */}
-        <div className="md:col-span-2 xl:col-span-1">
+        {/* Date From */}
+        <div className="sm:col-span-1">
           <input
             type="date"
             value={filters.dateFrom}
             onChange={(e) => onFilterChange("dateFrom", e.target.value)}
             placeholder="From Date"
-            className="w-full border border-slate-200 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#217486]/30 focus:border-[#217486]"
+            className="w-full border border-slate-200 p-2 sm:p-2.5 rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#217486]/30 focus:border-[#217486]"
           />
         </div>
 
-        <div className="md:col-span-2 xl:col-span-1">
+        {/* Date To */}
+        <div className="sm:col-span-1">
           <input
             type="date"
             value={filters.dateTo}
             onChange={(e) => onFilterChange("dateTo", e.target.value)}
             placeholder="To Date"
-            className="w-full border border-slate-200 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#217486]/30 focus:border-[#217486]"
+            className="w-full border border-slate-200 p-2 sm:p-2.5 rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#217486]/30 focus:border-[#217486]"
           />
         </div>
 
-        {/* Clear Button - Full width when active */}
+        {/* Clear Button */}
         {activeFilterCount > 0 && (
-          <div className="col-span-full md:col-span-2 xl:col-span-1">
+          <div className="sm:col-span-2 lg:col-span-5">
             <button
               onClick={onClearFilters}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-100 text-slate-700 rounded-lg font-medium hover:bg-slate-200 transition-all text-sm"
+              className="w-full flex items-center justify-center gap-2 px-4 py-2 sm:py-2.5 bg-slate-100 text-slate-700 rounded-lg font-medium hover:bg-slate-200 transition-all text-xs sm:text-sm"
             >
-              <X className="w-4 h-4" />
+              <X className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               Clear All Filters
             </button>
           </div>
