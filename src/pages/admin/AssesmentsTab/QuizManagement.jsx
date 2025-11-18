@@ -272,8 +272,8 @@ const QuizManagement = ({ department, onBack }) => {
                 className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all border border-gray-100 overflow-hidden group"
               >
                 <div className="bg-linear-to-br from-[#217486] to-[#2a8fa5] p-5">
-                  <div className="flex justify-between items-start mb-3">
-                    <h3 className="text-xl font-bold text-white flex-1 pr-2 leading-tight">
+                  <div className="flex justify-between items-start mb-1">
+                    <h3 className="text-xl text-white flex-1 pr-2 leading-tight">
                       {quiz.quiz_name}
                     </h3>
                     <div className="relative">

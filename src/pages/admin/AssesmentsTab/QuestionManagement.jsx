@@ -452,15 +452,15 @@ const QuestionManagement = ({ quiz, onBack }) => {
 
           <div className="flex justify-between items-center mt-10">
             <div>
-              <h1 className="text-3xl font-bold text-[#217486] mb-2">
+              <h1 className="text-3xl text-[#217486] mb-2">
                 {quiz.quiz_name}
               </h1>
-              <div className="flex items-center gap-4 text-sm text-gray-600">
+              <div className="flex items-center text-sm text-gray-600">
                 <span className="flex items-center gap-1">
                   {/* <span className="font-semibold text-[#217486]">{questions.length}</span> Questions */}
                 </span>
                 <span className="flex items-center gap-1">
-                  <span className="font-semibold text-[#217486]">{getTotalPoints()}</span> Total Points
+                  <span className="font-semibold text-[#217486]">{getTotalPoints()}</span> Questions
                 </span>
               </div>
             </div>
