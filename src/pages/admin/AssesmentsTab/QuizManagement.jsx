@@ -136,7 +136,7 @@ const QuizManagement = ({ department, onBack }) => {
     } catch (err) {
       setError(err.response?.data?.message || "Failed to delete quiz");
       console.error("Error deleting quiz:", err);
-      toast.error("Quiz Deletion Failed!")
+      toast.error("Quiz Deletion Failed!");
     }
   };
 
@@ -218,7 +218,10 @@ const QuizManagement = ({ department, onBack }) => {
               <div className="flex items-center gap-4 text-sm text-gray-600">
                 <span className="flex items-center gap-1">
                   <FileText className="w-4 h-4 text-[#217486]" />
-                  <span className="font-semibold text-[#217486]">{quizzes.length}</span> Quizzes
+                  <span className="font-semibold text-[#217486]">
+                    {quizzes.length}
+                  </span>{" "}
+                  Quizzes
                 </span>
               </div>
             </div>
@@ -227,7 +230,7 @@ const QuizManagement = ({ department, onBack }) => {
               onClick={() => setShowAddModal(true)}
               className="flex items-center gap-2 bg-[#217486] text-white px-6 py-3 rounded-xl hover:bg-[#1a5d6d] font-medium transition-all hover:shadow-xl hover:shadow-[#217486]/40"
             >
-              <Plus className="w-5 h-5" />
+              <Plus className="w-5 h-5 hidden sm:inline" />
               Create Quiz
             </button>
           </div>
@@ -254,8 +257,12 @@ const QuizManagement = ({ department, onBack }) => {
             <div className="w-20 h-20 bg-[#217486]/10 rounded-full flex items-center justify-center mx-auto mb-4">
               <FileText className="w-10 h-10 text-[#217486]" />
             </div>
-            <h3 className="text-xl font-semibold text-gray-700 mb-2">No Quizzes Yet</h3>
-            <p className="text-gray-500 mb-6">Create your first quiz to get started with assessments.</p>
+            <h3 className="text-xl font-semibold text-gray-700 mb-2">
+              No Quizzes Yet
+            </h3>
+            <p className="text-gray-500 mb-6">
+              Create your first quiz to get started with assessments.
+            </p>
             <button
               onClick={() => setShowAddModal(true)}
               className="inline-flex items-center gap-2 px-6 py-3 bg-[#217486] text-white rounded-xl hover:bg-[#1a5d6d] font-medium transition-all shadow-lg shadow-[#217486]/30"
@@ -318,10 +325,12 @@ const QuizManagement = ({ department, onBack }) => {
                       )}
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center gap-2 text-white/90">
                     <Clock className="w-4 h-4" />
-                    <span className="text-sm font-medium">{quiz.time_limit} minutes</span>
+                    <span className="text-sm font-medium">
+                      {quiz.time_limit} minutes
+                    </span>
                   </div>
                 </div>
 
@@ -330,7 +339,10 @@ const QuizManagement = ({ department, onBack }) => {
                     <div className="flex items-center gap-2 text-gray-600">
                       <FileText className="w-4 h-4 text-[#217486]" />
                       <span className="text-sm font-medium">
-                        <span className="text-[#217486] font-bold">{quiz.question_count || 0}</span> Questions
+                        <span className="text-[#217486] font-bold">
+                          {quiz.question_count || 0}
+                        </span>{" "}
+                        Questions
                       </span>
                     </div>
                   </div>
@@ -369,9 +381,11 @@ const QuizManagement = ({ department, onBack }) => {
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
             <div className="bg-linear-to-r from-[#217486] to-[#2a8fa5] p-6">
               <h2 className="text-2xl font-bold text-white">Create New Quiz</h2>
-              <p className="text-white/80 text-sm mt-1">Add a new quiz to your department</p>
+              <p className="text-white/80 text-sm mt-1">
+                Add a new quiz to your department
+              </p>
             </div>
-            
+
             <div className="p-6 space-y-5">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -421,7 +435,7 @@ const QuizManagement = ({ department, onBack }) => {
                 disabled={!newQuiz.quiz_name.trim() || !newQuiz.time_limit}
                 className="flex-1 px-4 py-3 bg-[#217486] hover:bg-[#1a5d6d] text-white rounded-xl transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[#217486]/30"
               >
-                Create Quiz
+                Proceed
               </button>
             </div>
           </div>
@@ -434,9 +448,11 @@ const QuizManagement = ({ department, onBack }) => {
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
             <div className="bg-linear-to-r from-[#217486] to-[#2a8fa5] p-6">
               <h2 className="text-2xl font-bold text-white">Edit Quiz</h2>
-              <p className="text-white/80 text-sm mt-1">Update quiz information</p>
+              <p className="text-white/80 text-sm mt-1">
+                Update quiz information
+              </p>
             </div>
-            
+
             <div className="p-6 space-y-5">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -516,7 +532,8 @@ const QuizManagement = ({ department, onBack }) => {
               <strong className="text-gray-900">
                 {deletingQuiz.quiz_name}
               </strong>
-              ? This action cannot be undone and will remove all associated questions.
+              ? This action cannot be undone and will remove all associated
+              questions.
             </p>
             <div className="flex gap-3">
               <button
@@ -549,8 +566,12 @@ const QuizManagement = ({ department, onBack }) => {
                   <LinkIcon className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-white">Generate Invite</h2>
-                  <p className="text-white/80 text-sm">{selectedQuizForInvite.quiz_name}</p>
+                  <h2 className="text-2xl font-bold text-white">
+                    Generate Invite
+                  </h2>
+                  <p className="text-white/80 text-sm">
+                    {selectedQuizForInvite.quiz_name}
+                  </p>
                 </div>
               </div>
             </div>
@@ -627,7 +648,9 @@ const QuizManagement = ({ department, onBack }) => {
                   </div>
                   <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
                     <p className="text-sm text-blue-900">
-                      <strong className="font-semibold">Note:</strong> Share this link with examinees. They will be prompted to enter their email when accessing the quiz.
+                      <strong className="font-semibold">Note:</strong> Share
+                      this link with examinees. They will be prompted to enter
+                      their email when accessing the quiz.
                     </p>
                   </div>
                   <button

@@ -1,6 +1,15 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { Clock, Plus, Edit2, Trash2, X, ArrowLeft, CheckCircle, Circle } from "lucide-react";
+import {
+  Clock,
+  Plus,
+  Edit2,
+  Trash2,
+  X,
+  ArrowLeft,
+  CheckCircle,
+  Circle,
+} from "lucide-react";
 import toast from "react-hot-toast";
 
 const API_BASE_URL = "http://localhost:3000/api";
@@ -86,7 +95,9 @@ const QuestionModal = ({ isOpen, onClose, question, setQuestion, onSave }) => {
                   onChange={() => setCorrectAnswer(i)}
                   className="w-4 h-4 text-[#217486] focus:ring-[#217486]"
                 />
-                <span className="font-medium text-gray-700">{opt.option_text}</span>
+                <span className="font-medium text-gray-700">
+                  {opt.option_text}
+                </span>
               </div>
             ))}
           </div>
@@ -160,7 +171,7 @@ const QuestionModal = ({ isOpen, onClose, question, setQuestion, onSave }) => {
                 <button
                   key={t}
                   onClick={() => handleTypeChange(t)}
-                  className={`py-2.5 rounded-lg font-medium transition-all ${
+                  className={`py-2.5 rounded-lg font-medium text-sm sm:text-base transition-all ${
                     question.question_type === t
                       ? "bg-[#217486] text-white shadow-lg shadow-[#217486]/30"
                       : "bg-gray-100 hover:bg-gray-200 text-gray-700"
@@ -204,10 +215,10 @@ const QuestionModal = ({ isOpen, onClose, question, setQuestion, onSave }) => {
             />
             {/* added condition for checkbox */}
             {question.question_type === "CB" && (
-                <span className="text-xs text-gray-600 bg-cyan-50 border border-cyan-600 p-3 rounded-lg mx-2">
-                  <span className="font-semibold text-gray-800">Note: </span>  
-                  Each correct answer is equivalent to the points allocated.
-                </span>
+              <span className="text-xs text-gray-600 bg-cyan-50 border border-cyan-600 p-3 rounded-lg mx-2">
+                <span className="font-semibold text-gray-800">Note: </span>
+                Each correct answer is equivalent to the points allocated.
+              </span>
             )}
           </div>
 
@@ -258,11 +269,15 @@ const DeleteModal = ({ isOpen, onClose, onConfirm, questionText }) => {
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex justify-center items-center z-50 p-4">
       <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl">
-        <h3 className="text-xl font-bold text-gray-800 mb-3">Delete Question</h3>
+        <h3 className="text-xl font-bold text-gray-800 mb-3">
+          Delete Question
+        </h3>
         <p className="text-gray-600 mb-6">
           Are you sure you want to delete this question?
           <br />
-          <span className="font-semibold text-gray-800 mt-2 block">"{questionText}"</span>
+          <span className="font-semibold text-gray-800 mt-2 block">
+            "{questionText}"
+          </span>
         </p>
         <div className="flex justify-end gap-3">
           <button
@@ -351,12 +366,12 @@ const QuestionManagement = ({ quiz, onBack }) => {
         `${API_BASE_URL}/question/${quiz.quiz_id}/delete/${question.question_id}`
       );
       //added toast
-      toast.success("Question Deleted!")
+      toast.success("Question Deleted!");
       setDeleteModalOpen(false);
       fetchQuestions();
     } catch (err) {
       console.error("Delete error:", err);
-      toast.error("Question Deletion Failed!")
+      toast.error("Question Deletion Failed!");
     }
   };
 
@@ -365,17 +380,17 @@ const QuestionManagement = ({ quiz, onBack }) => {
     if (!q.question_text.trim()) return toast.error("Question text required");
 
     //added to check if the options are empty
-    if ((q.question_type === "MC" || q.question_type === "CB")) {
-    if (!q.options || q.options.length < 2) {
-      return toast.error("At least 2 options are required");
-    }
-    // Also check that all options have text
-    for (let i = 0; i < q.options.length; i++) {
-      if (!q.options[i].option_text.trim()) {
-        return toast.error(`All options must have text!`);
+    if (q.question_type === "MC" || q.question_type === "CB") {
+      if (!q.options || q.options.length < 2) {
+        return toast.error("At least 2 options are required");
+      }
+      // Also check that all options have text
+      for (let i = 0; i < q.options.length; i++) {
+        if (!q.options[i].option_text.trim()) {
+          return toast.error(`All options must have text!`);
+        }
       }
     }
-  }
 
     if (editingIndex !== null) {
       await axios.put(
@@ -383,7 +398,7 @@ const QuestionManagement = ({ quiz, onBack }) => {
         q
       );
       //added updated toast
-      toast.success("Question Updated!")
+      toast.success("Question Updated!");
       const original = questions[editingIndex];
       const originalIds = original.options
         .map((o) => o.answer_id)
@@ -395,7 +410,6 @@ const QuestionManagement = ({ quiz, onBack }) => {
             `${API_BASE_URL}/answer/${opt.answer_id}/update`,
             opt
           );
-          
         } else {
           await axios.post(
             `${API_BASE_URL}/answer/${q.question_id}/create`,
@@ -415,7 +429,7 @@ const QuestionManagement = ({ quiz, onBack }) => {
         q
       );
       //added toast
-      toast.success("Question Added!")
+      toast.success("Question Added!");
       const newId = res.data.data.question_id;
       for (const opt of q.options) {
         await axios.post(`${API_BASE_URL}/answer/${newId}/create`, opt);
@@ -426,11 +440,15 @@ const QuestionManagement = ({ quiz, onBack }) => {
   };
 
   const getTypeLabel = (type) => {
-    switch(type) {
-      case "MC": return "Multiple Choice";
-      case "CB": return "Checkbox";
-      case "TF": return "True/False";
-      default: return type;
+    switch (type) {
+      case "MC":
+        return "Multiple Choice";
+      case "CB":
+        return "Checkbox";
+      case "TF":
+        return "True/False";
+      default:
+        return type;
     }
   };
 
@@ -455,21 +473,24 @@ const QuestionManagement = ({ quiz, onBack }) => {
               <h1 className="text-3xl font-bold text-[#217486] mb-2">
                 {quiz.quiz_name}
               </h1>
-              <div className="flex items-center gap-4 text-sm text-gray-600">
+              <div className="flex items-center text-sm text-gray-600">
                 <span className="flex items-center gap-1">
                   {/* <span className="font-semibold text-[#217486]">{questions.length}</span> Questions */}
                 </span>
                 <span className="flex items-center gap-1">
-                  <span className="font-semibold text-[#217486]">{getTotalPoints()}</span> Total Points
+                  <span className="font-semibold text-[#217486]">
+                    {getTotalPoints()}
+                  </span>{" "}
+                  Total Points
                 </span>
               </div>
             </div>
-          
+
             <button
               onClick={openAdd}
-              className="flex items-center gap-2 px-5 py-3 bg-[#217486] text-white rounded-xl hover:bg-[#1a5d6d] font-medium transition-all hover:shadow-xl hover:shadow-[#217486]/40"
+              className="flex items-center gap-2 px-4 py-3 bg-[#217486] text-white rounded-xl hover:bg-[#1a5d6d] font-medium transition-all hover:shadow-xl hover:shadow-[#217486]/40"
             >
-              <Plus className="w-5 h-5" /> Add Question
+              <Plus className="w-5 h-5 hidden sm:inline" /> Add Question
             </button>
           </div>
         </div>
@@ -487,8 +508,12 @@ const QuestionManagement = ({ quiz, onBack }) => {
             <div className="text-gray-400 mb-4">
               <Circle className="w-16 h-16 mx-auto" />
             </div>
-            <h3 className="text-xl font-semibold text-gray-700 mb-2">No Questions Yet</h3>
-            <p className="text-gray-500 mb-6">Start building your quiz by adding your first question.</p>
+            <h3 className="text-xl font-semibold text-gray-700 mb-2">
+              No Questions Yet
+            </h3>
+            <p className="text-gray-500 mb-6">
+              Start building your quiz by adding your first question.
+            </p>
             <button
               onClick={openAdd}
               className="inline-flex items-center gap-2 px-6 py-3 bg-[#217486] text-white rounded-xl hover:bg-[#1a5d6d] font-medium transition-all shadow-lg shadow-[#217486]/30"
@@ -514,7 +539,7 @@ const QuestionManagement = ({ quiz, onBack }) => {
                           {q.question_text}
                         </h3>
                       </div>
-                      
+
                       <div className="flex items-center gap-3 ml-11 mb-3">
                         <span className="px-3 py-1 bg-[#217486]/10 text-[#217486] rounded-lg text-xs font-semibold">
                           {getTypeLabel(q.question_type)}
@@ -539,7 +564,13 @@ const QuestionManagement = ({ quiz, onBack }) => {
                             ) : (
                               <Circle className="w-4 h-4 text-gray-400 shrink-0" />
                             )}
-                            <span className={opt.is_correct ? "text-green-800 font-medium" : "text-gray-600"}>
+                            <span
+                              className={
+                                opt.is_correct
+                                  ? "text-green-800 font-medium"
+                                  : "text-gray-600"
+                              }
+                            >
                               {opt.option_text}
                             </span>
                           </div>

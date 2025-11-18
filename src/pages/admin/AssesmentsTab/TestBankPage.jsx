@@ -81,12 +81,12 @@ const TestBankPage = () => {
       await toggleDepartmentActiveStatus(department);
       await fetchDepartments();
       //added toast!
-      toast.success("Department Status Updated!")
+      toast.success("Department Status Updated!");
       setError(null);
     } catch (err) {
       console.error("Error toggling status:", err);
       setError(err.response?.data?.message || "Failed to update status");
-      toast.error("Department Update Status Failed")
+      toast.error("Department Update Status Failed");
     }
   };
 
@@ -96,12 +96,12 @@ const TestBankPage = () => {
       await addDepartment(newDeptName);
       await fetchDepartments();
       //added toast
-      toast.success("Department Added!")
+      toast.success("Department Added!");
       closeAllModals();
     } catch (err) {
       console.error("Error creating department:", err);
       setError(err.response?.data?.message || "Failed to create department");
-      toast.error("Department Creation Failed!")
+      toast.error("Department Creation Failed!");
     }
   };
 
@@ -111,12 +111,12 @@ const TestBankPage = () => {
       await editDepartment(editingDept);
       await fetchDepartments();
       //added toast
-      toast.success("Department Updated!")
+      toast.success("Department Updated!");
       closeAllModals();
     } catch (err) {
       console.error("Error updating department:", err);
       setError(err.response?.data?.message || "Failed to update department");
-      toast.error("De[artment Update Failed!")
+      toast.error("De[artment Update Failed!");
     }
   };
 
@@ -125,12 +125,12 @@ const TestBankPage = () => {
     try {
       await deleteDepartment(deletingDept);
       await fetchDepartments();
-      toast.success("Department Deleted Successfully!")
+      toast.success("Department Deleted Successfully!");
       closeAllModals();
     } catch (err) {
       console.error("Error deleting department:", err);
       setError(err.response?.data?.message || "Failed to delete department");
-      toast.error("Department Deletion Failed!")
+      toast.error("Department Deletion Failed!");
     }
   };
 
@@ -172,7 +172,7 @@ const TestBankPage = () => {
             </div>
             <button
               onClick={() => setShowAddModal(true)}
-              className="flex items-center justify-center gap-2 bg-[#217486] text-white px-6 py-3 rounded-xl shadow-lg shadow-[#217486]/30 hover:shadow-xl hover:shadow-[#217486]/40 hover:bg-[#1a5d6d] transition-all transform hover:-translate-y-0.5"
+              className="flex items-center justify-center gap-2 bg-[#217486] text-white px-3 py-3 rounded-xl shadow-lg shadow-[#217486]/30 hover:shadow-xl hover:shadow-[#217486]/40 hover:bg-[#1a5d6d] transition-all transform hover:-translate-y-0.5"
             >
               <Plus className="w-5 h-5" strokeWidth={2.5} />
               <span className="font-medium">Add Department</span>
