@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
-import { Clock, Plus, Edit2, Trash2, X, ArrowLeft, CheckCircle, Circle, Menu } from "lucide-react";
+import { Plus, Edit2, Trash2, X, ArrowLeft, CheckCircle, Circle } from "lucide-react";
 import toast from "react-hot-toast";
-
-const API_BASE_URL = "http://localhost:3000/api";
+import { addAnswer, addQuestion, deleteAnswer, deleteQuestion, getAnswer, getQuestions, updateAnswer, updateQuestion } from "../../../../api/api";
 
 const QuestionModal = ({ isOpen, onClose, question, setQuestion, onSave }) => {
   if (!isOpen) return null;
@@ -311,17 +309,12 @@ const QuestionManagement = ({ quiz, onBack }) => {
   const fetchQuestions = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(
-        `${API_BASE_URL}/question/get/${quiz.quiz_id}`
-      );
-      const data = res.data.data || [];
+      const res = await getQuestions(quiz.quiz_id)
 
       const withOptions = await Promise.all(
-        data.map(async (q) => {
-          const optRes = await axios.get(
-            `${API_BASE_URL}/answer/get/${q.question_id}`
-          );
-          return { ...q, options: optRes.data.data || [] };
+        res.map(async (q) => {
+          const optRes = await getAnswer(q.question_id)
+          return { ...q, options: optRes };
         })
       );
 
@@ -348,9 +341,8 @@ const QuestionManagement = ({ quiz, onBack }) => {
   const handleDelete = async () => {
     const question = questions[deleteIndex];
     try {
-      await axios.delete(
-        `${API_BASE_URL}/question/${quiz.quiz_id}/delete/${question.question_id}`
-      );
+      await deleteQuestion(quiz.quiz_id, question.question_id)
+      //added toast
       toast.success("Question Deleted!")
       setDeleteModalOpen(false);
       fetchQuestions();
@@ -376,10 +368,8 @@ const QuestionManagement = ({ quiz, onBack }) => {
     }
 
     if (editingIndex !== null) {
-      await axios.put(
-        `${API_BASE_URL}/question/${quiz.quiz_id}/update/${q.question_id}`,
-        q
-      );
+      await updateQuestion(quiz.quiz_id, q.question_id, q)
+      //added updated toast
       toast.success("Question Updated!")
       const original = questions[editingIndex];
       const originalIds = original.options
@@ -388,32 +378,23 @@ const QuestionManagement = ({ quiz, onBack }) => {
 
       for (const opt of q.options) {
         if (opt.answer_id) {
-          await axios.put(
-            `${API_BASE_URL}/answer/${opt.answer_id}/update`,
-            opt
-          );
+          await updateAnswer(opt.answer_id,opt)
         } else {
-          await axios.post(
-            `${API_BASE_URL}/answer/${q.question_id}/create`,
-            opt
-          );
+          await addAnswer(q.question_id, opt)
         }
       }
 
       for (const oldId of originalIds) {
         if (!q.options.find((o) => o.answer_id === oldId)) {
-          await axios.delete(`${API_BASE_URL}/answer/${oldId}/delete`);
+          await deleteAnswer(oldId)
         }
       }
     } else {
-      const res = await axios.post(
-        `${API_BASE_URL}/question/${quiz.quiz_id}/create`,
-        q
-      );
+      const { question_id } = await addQuestion(quiz.quiz_id, q)
+      //added toast
       toast.success("Question Added!")
-      const newId = res.data.data.question_id;
       for (const opt of q.options) {
-        await axios.post(`${API_BASE_URL}/answer/${newId}/create`, opt);
+        await addAnswer(question_id, opt)
       }
     }
     setModalOpen(false);

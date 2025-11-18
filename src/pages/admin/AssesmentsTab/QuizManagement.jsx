@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import {
   Plus,
   MoreVertical,
@@ -11,11 +10,10 @@ import {
   Copy,
   Check,
   FileText,
-  Calendar,
-  Users,
 } from "lucide-react";
 import QuestionManagement from "./QuestionManagement";
 import toast from "react-hot-toast";
+import { getQuizzes, addQuiz, deleteQuiz, generateInviteLink } from "../../../../api/api";
 
 const QuizManagement = ({ department, onBack }) => {
   const [quizzes, setQuizzes] = useState([]);
@@ -36,8 +34,6 @@ const QuizManagement = ({ department, onBack }) => {
   const [openMenuId, setOpenMenuId] = useState(null);
   const [selectedQuiz, setSelectedQuiz] = useState(null);
 
-  const API_BASE_URL = `http://localhost:3000/api/quiz`;
-  const INVITE_API_BASE_URL = `http://localhost:3000/api/invitation`;
 
   useEffect(() => {
     fetchQuizzes();
@@ -52,10 +48,10 @@ const QuizManagement = ({ department, onBack }) => {
   const fetchQuizzes = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(
-        `${API_BASE_URL}/get/${department.dept_id}`
-      );
-      setQuizzes(response.data.data || []);
+      
+      const response = await getQuizzes(department.dept_id)
+
+      setQuizzes(response);
       setError(null);
     } catch (err) {
       if (err.response?.status === 400) {
@@ -74,11 +70,13 @@ const QuizManagement = ({ department, onBack }) => {
     if (!newQuiz.quiz_name.trim() || !newQuiz.time_limit) return;
 
     try {
-      await axios.post(`${API_BASE_URL}/${department.dept_id}/create`, {
+      const payload = {
         dept_id: department.dept_id,
         quiz_name: newQuiz.quiz_name,
         time_limit: parseInt(newQuiz.time_limit),
-      });
+      }
+      
+      await addQuiz(department.dept_id, payload);
 
       await fetchQuizzes();
       setNewQuiz({ quiz_name: "", time_limit: "" });
@@ -101,13 +99,13 @@ const QuizManagement = ({ department, onBack }) => {
       return;
 
     try {
-      await axios.put(
-        `${API_BASE_URL}/${department.dept_id}/update/${editingQuiz.quiz_id}`,
-        {
+
+      const payload = {
           quiz_name: editingQuiz.quiz_name,
           time_limit: parseInt(editingQuiz.time_limit),
         }
-      );
+      
+      await editingQuiz(department.dept_id, quiz.quiz_id, payload)
 
       await fetchQuizzes();
       toast.success("Quiz Updated!");
@@ -124,9 +122,7 @@ const QuizManagement = ({ department, onBack }) => {
   const handleDeleteQuiz = async () => {
     if (!deletingQuiz) return;
     try {
-      await axios.delete(
-        `${API_BASE_URL}/${department.dept_id}/delete/${deletingQuiz.quiz_id}`
-      );
+      await deleteQuiz(department.dept_id, deleteQuiz.quiz_id)
       await fetchQuizzes();
       toast.success("Quiz Deleted!");
       setShowDeleteModal(false);
@@ -143,14 +139,15 @@ const QuizManagement = ({ department, onBack }) => {
     if (!inviteExpiration || !selectedQuizForInvite) return;
 
     try {
-      const response = await axios.post(`${INVITE_API_BASE_URL}/generate`, {
+      const payload = {
         email: null,
         expiration: inviteExpiration,
         quiz_id: selectedQuizForInvite.quiz_id,
         dept_id: department.dept_id,
-      });
+      }
+      const link = await generateInviteLink(payload)
 
-      setGeneratedLink(response.data.data.link);
+      setGeneratedLink(link);
       setError(null);
     } catch (err) {
       setError(
@@ -271,12 +268,12 @@ const QuizManagement = ({ department, onBack }) => {
                 key={quiz.quiz_id}
                 className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all border border-gray-100 overflow-hidden group"
               >
-                <div className="bg-gradient-to-br from-[#217486] to-[#2a8fa5] p-4 sm:p-5">
+                <div className="bg-linear-to-br from-[#217486] to-[#2a8fa5] p-4 sm:p-5">
                   <div className="flex justify-between items-start mb-3">
-                    <h3 className="text-lg sm:text-xl font-bold text-white flex-1 pr-2 leading-tight break-words">
+                    <h3 className="text-lg sm:text-xl font-bold text-white flex-1 pr-2 leading-tight wrap-break-word">
                       {quiz.quiz_name}
                     </h3>
-                    <div className="relative flex-shrink-0">
+                    <div className="relative shrink-0">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -432,7 +429,7 @@ const QuizManagement = ({ department, onBack }) => {
       {showEditModal && editingQuiz && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
-            <div className="bg-gradient-to-r from-[#217486] to-[#2a8fa5] p-6">
+            <div className="bg-linear-to-r from-[#217486] to-[#2a8fa5] p-6">
               <h2 className="text-xl sm:text-2xl font-bold text-white">Edit Quiz</h2>
               <p className="text-white/80 text-sm mt-1">Update quiz information</p>
             </div>
@@ -543,7 +540,7 @@ const QuizManagement = ({ department, onBack }) => {
       {showInviteModal && selectedQuizForInvite && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
-            <div className="bg-gradient-to-r from-[#217486] to-[#2a8fa5] p-6">
+            <div className="bg-linear-to-r from-[#217486] to-[#2a8fa5] p-6">
               <div className="flex items-center gap-3 mb-2">
                 <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
                   <LinkIcon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
