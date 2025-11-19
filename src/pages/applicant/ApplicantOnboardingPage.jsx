@@ -3,6 +3,8 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import ConfirmationModal from "@/components/ConfimationModal";
 import toast from "react-hot-toast";
+import OnboardingMessage from "../../components/applicant/OnboardingMessage";
+import { getAllDepartments, submitExaminerData, validateInvitationLink } from "../../../api/api";
 
 const ApplicantOnboardingPage = () => {
   const [formData, setFormData] = useState({
@@ -30,17 +32,13 @@ const ApplicantOnboardingPage = () => {
   const fetchDepartments = async () => {
     try {
       setIsLoadingDepts(true);
-      const response = await fetch("http://localhost:3000/api/department/get");
-
-      if (!response.ok) {
+      const response = await getAllDepartments()
+      if (!response) {
         throw new Error("Failed to fetch departments");
       }
 
-      const result = await response.json();
-      console.log("Departments fetched:", result);
-
       // Filter only active departments
-      const activeDepartments = result.data.filter((dept) => dept.is_active);
+      const activeDepartments = response.filter((dept) => dept.is_active);
       setDepartments(activeDepartments);
     } catch (err) {
       console.error("Error fetching departments:", err);
@@ -58,16 +56,9 @@ const ApplicantOnboardingPage = () => {
     }
 
     try {
-      console.log("Validating token:", token);
-      const response = await fetch(
-        `http://localhost:3000/api/invitation/validate/${token}`
-      );
+      const response = await validateInvitationLink(token)
 
-      console.log("Validation response status:", response.status);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Validation error response:", errorText);
+      if (!response.status === 200) {
 
         if (response.status === 404) {
           throw new Error(
@@ -78,35 +69,25 @@ const ApplicantOnboardingPage = () => {
         throw new Error("Invalid or expired invitation link");
       }
 
-      const result = await response.json();
-
-      console.log("Validation result:", result);
-      console.log("Result.data contents:", result.data);
-
-      if (!result.data) {
+      if (!response) {
         console.error("No data object in result:", result);
         throw new Error("Invalid invitation data received from server");
       }
 
-      setInviteData(result.data);
+      setInviteData(response);
 
-      // Extract department ID if provided in the invitation
       const deptId =
-        result.data.dept_id ||
-        result.data.department_id ||
-        result.data.deptId ||
+        response.dept_id ||
+        response.department_id ||
+        response.deptId ||
         "";
 
-      console.log("Extracted dept_id:", deptId);
-
-      // Pre-fill department if available
       setFormData((prev) => ({
         ...prev,
         department: deptId ? deptId.toString() : "",
       }));
 
       setIsValidating(false);
-      console.log("Validation successful!");
     } catch (err) {
       console.error("Token validation error:", err);
       setError(err.message || "Failed to validate invitation");
@@ -125,11 +106,12 @@ const ApplicantOnboardingPage = () => {
 
   const handleSubmit = async () => {
     if (!inviteData) {
+      //TODO
+      // wag alert dito ayusin UI
       alert("Invalid invitation. Please use a valid invite link.");
       return;
     }
 
-    // Validate all required fields
     if (!formData.firstName.trim()) {
       toast.error("Please enter your First name");
       return;
@@ -153,6 +135,8 @@ const ApplicantOnboardingPage = () => {
     }
 
     if (!formData.department) {
+      // TODO
+      // pati dito
       alert("Please select a department");
       return;
     }
@@ -167,41 +151,14 @@ const ApplicantOnboardingPage = () => {
         email: formData.email,
       };
 
-      console.log("Submitting applicant data:", applicantData);
-
-      const response = await fetch(
-        "http://localhost:3000/api/invitation/complete",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(applicantData),
-        }
-      );
-
-      const text = await response.text();
-      let result;
-
-      try {
-        result = JSON.parse(text);
-      } catch (e) {
-        console.error("Response is not JSON:", text);
-        throw new Error("Server returned invalid response");
-      }
-
-      if (!response.ok) {
-        throw new Error(result?.message || "Failed to submit form");
-      }
-
-      console.log("Form submitted successfully:", result);
+      const result = await submitExaminerData(applicantData)
 
       const applicantDataForStorage = {
         firstName: formData.firstName,
         lastName: formData.lastName,
         email: formData.email,
         department: formData.department,
-        examiner_id: result.data.examiner.examiner_id,
+        examiner_id: result.examiner.examiner_id,
       };
 
       if (localStorage.getItem("applicantData")) {
@@ -217,12 +174,12 @@ const ApplicantOnboardingPage = () => {
         "applicantData",
         JSON.stringify(applicantDataForStorage)
       );
-      localStorage.setItem("selectedQuiz", JSON.stringify(result.data.quiz));
+      localStorage.setItem("selectedQuiz", JSON.stringify(result.quiz));
 
       navigate("/test-instructions", {
         state: {
           applicantData: applicantDataForStorage,
-          selectedQuiz: result.data.quiz,
+          selectedQuiz: result.quiz,
         },
       });
     } catch (error) {
@@ -305,33 +262,7 @@ const ApplicantOnboardingPage = () => {
       >
         <div className="flex-1 flex items-center justify-center px-4 py-8 sm:py-12">
           <div className="w-full max-w-5xl flex flex-col lg:flex-row gap-8 lg:gap-12 items-center">
-            <div className="flex-1 w-full lg:w-auto text-center lg:text-left">
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6 lg:mb-8">
-                <span className="text-cyan-600">Welcome,</span>{" "}
-                <span className="text-black">Examinee!</span>
-              </h1>
-              <div className="space-y-4 lg:space-y-6 text-gray-800 text-sm sm:text-base">
-                <p className="leading-relaxed">
-                  Thank you for your interest in joining our program. Please
-                  complete the form with accurate information
-                  <span className="font-semibold">
-                    {" "}
-                    — especially your email address, as it will be used to link
-                    your account and test results.
-                  </span>
-                </p>
-                <p className="leading-relaxed">
-                  Once you've submitted your details, you'll receive access to
-                  your assessment. Make sure to take the test only once per
-                  applicant.
-                </p>
-                <p className="leading-relaxed">
-                  <span className="text-cyan-600 font-bold">Good luck</span>{" "}
-                  <span className="font-semibold">—</span> we're excited to see
-                  how you perform!
-                </p>
-              </div>
-            </div>
+          <OnboardingMessage />
             <div className="w-full sm:w-96">
               <div
                 className="bg-white rounded-2xl p-6 sm:p-8 relative border border-gray-200 mb-6 sm:mb-0"
@@ -481,9 +412,6 @@ const ApplicantOnboardingPage = () => {
             communication of results.
           </p>
         </div>
-        {/* <div className="bg-[#2E99B0] py-4 text-center text-xs text-white">
-          Copyright 2025 @ SuiteTest
-        </div> */}
         <Footer />
       </div>
     </>

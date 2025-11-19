@@ -487,7 +487,6 @@ const ApplicantTestPage = () => {
                   currentQuestion.question_type === "CB"
                     ? selectedAnswers.includes(option.answer_id)
                     : selectedAnswer === option.answer_id;
-
                 return (
                   <button
                     key={option.answer_id}

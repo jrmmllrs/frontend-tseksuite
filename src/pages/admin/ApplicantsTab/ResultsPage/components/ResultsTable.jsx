@@ -49,10 +49,7 @@ function ResultsTable({ data }) {
         </thead>
         <tbody className="divide-y divide-slate-100">
           {data.map((row) => (
-            <tr
-              key={row.id}
-              className="hover:bg-[#217486]/5 transition-colors"
-            >
+            <tr key={row.id} className="hover:bg-[#217486]/5 transition-colors">
               <td className="px-6 py-4">
                 <span className="text-sm font-mono text-slate-600">
                   {row.id}
@@ -72,7 +69,7 @@ function ResultsTable({ data }) {
               </td>
               <td className="px-6 py-4">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-medium">
-                  <Building2 className="w-3 h-3 flex-shrink-0" />
+                  <Building2 className="w-3 h-3 shrink-0" />
                   <span className="truncate">{row.department || "N/A"}</span>
                 </span>
               </td>
@@ -83,7 +80,7 @@ function ResultsTable({ data }) {
               </td>
               <td className="px-6 py-4">
                 <span className="text-sm font-semibold text-slate-800">
-                  {row.score || 0}
+                  {row.score || 0}/{row.total_points || 0}
                 </span>
               </td>
               <td className="px-6 py-4">
@@ -98,7 +95,7 @@ function ResultsTable({ data }) {
               </td>
               <td className="px-6 py-4">
                 <span className="inline-flex items-center gap-1.5 text-sm text-slate-600">
-                  <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
+                  <Calendar className="w-3.5 h-3.5 shrink-0" />
                   <span className="truncate">{formatDate(row.date)}</span>
                 </span>
               </td>
