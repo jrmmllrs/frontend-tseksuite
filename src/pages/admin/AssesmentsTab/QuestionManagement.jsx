@@ -7,6 +7,7 @@ import {
   ArrowLeft,
   CheckCircle,
   Circle,
+  FileText,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import {
@@ -501,8 +502,11 @@ const QuestionManagement = ({ quiz, onBack }) => {
           </div>
         ) : questions.length === 0 ? (
           <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg p-8 sm:p-12 text-center">
-            <div className="text-gray-400 mb-4">
+            {/* <div className="text-gray-400 mb-4">
               <Circle className="w-12 h-12 sm:w-16 sm:h-16 mx-auto" />
+            </div> */}
+            <div className="w-20 h-20 bg-[#217486]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+              <FileText className="w-10 h-10 text-[#217486]" />
             </div>
             <h3 className="text-lg sm:text-xl font-semibold text-gray-700 mb-2">
               No Questions Yet
