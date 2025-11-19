@@ -381,13 +381,7 @@ const QuestionManagement = ({ quiz, onBack }) => {
     const q = currentQuestion;
     if (!q.question_text.trim()) return toast.error("Question text required");
 
-    //added to check if the options are empty
     if (q.question_type === "MC" || q.question_type === "CB") {
-      if (!q.options || q.options.length < 2) {
-        return toast.error("At least 2 options are required");
-      }
-      // Also check that all options have text
-    if ((q.question_type === "MC" || q.question_type === "CB")) {
       if (!q.options || q.options.length < 2) {
         return toast.error("At least 2 options are required");
       }
@@ -486,7 +480,7 @@ const QuestionManagement = ({ quiz, onBack }) => {
 
             <button
               onClick={openAdd}
-              className="flex items-center gap-2 px-4 py-3 bg-[#217486] text-white rounded-xl hover:bg-[#1a5d6d] font-medium transition-all hover:shadow-xl hover:shadow-[#217486]/40"
+              className="flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 sm:py-3 bg-[#217486] text-white rounded-xl hover:bg-[#1a5d6d] font-medium transition-all hover:shadow-xl hover:shadow-[#217486]/40 text-sm sm:text-base whitespace-nowrap"
             >
               <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
               <span className="hidden sm:inline">Add Question</span>
