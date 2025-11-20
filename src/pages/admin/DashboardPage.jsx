@@ -103,7 +103,7 @@ function DashboardPage() {
               candidates={examiners}
               headerCells={headerCells}
               columns={columns}
-              tableName={"Examiners"}
+              tableName={"Recent Examinees"}
             />
           )}
         </div>
