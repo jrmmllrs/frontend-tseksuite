@@ -10,19 +10,32 @@ import {
   Copy,
   Check,
   FileText,
+  FilePlus,
 } from "lucide-react";
 import QuestionManagement from "./QuestionManagement";
 import toast from "react-hot-toast";
-import { getQuizzes, addQuiz, deleteQuiz, editQuiz, generateInviteLink } from "../../../../api/api";
+import {
+  getQuizzes,
+  addQuiz,
+  deleteQuiz,
+  editQuiz,
+  generateInviteLink,
+} from "../../../../api/api";
 
 const QuizManagement = ({ department, onBack }) => {
   const [quizzes, setQuizzes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showAddPdfModal, setShowAddPdfModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [newQuiz, setNewQuiz] = useState({ quiz_name: "", time_limit: "" });
+  const [newPdfQuiz, setNewPdfQuiz] = useState({
+    quiz_name: "",
+    time_limit: "",
+    pdf_link: "",
+  });
   const [editingQuiz, setEditingQuiz] = useState(null);
   const [deletingQuiz, setDeletingQuiz] = useState(null);
   const [selectedQuizForInvite, setSelectedQuizForInvite] = useState(null);
@@ -47,9 +60,7 @@ const QuizManagement = ({ department, onBack }) => {
   const fetchQuizzes = async () => {
     try {
       setLoading(true);
-
       const response = await getQuizzes(department.dept_id);
-
       setQuizzes(response);
       setError(null);
     } catch (err) {
@@ -73,10 +84,10 @@ const QuizManagement = ({ department, onBack }) => {
         dept_id: department.dept_id,
         quiz_name: newQuiz.quiz_name,
         time_limit: parseInt(newQuiz.time_limit),
+        pdf_link: null,
       };
 
       await addQuiz(department.dept_id, payload);
-
       await fetchQuizzes();
       setNewQuiz({ quiz_name: "", time_limit: "" });
       toast.success("Quiz Added!");
@@ -86,6 +97,42 @@ const QuizManagement = ({ department, onBack }) => {
       setError(err.response?.data?.message || "Failed to create quiz");
       console.error("Error creating quiz:", err);
       toast.error("Quiz Creation Failed!");
+    }
+  };
+
+  const handleAddPdfQuiz = async () => {
+    if (
+      !newPdfQuiz.quiz_name.trim() ||
+      !newPdfQuiz.time_limit ||
+      !newPdfQuiz.pdf_link.trim()
+    ) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+
+    try {
+      const payload = {
+        dept_id: department.dept_id,
+        quiz_name: newPdfQuiz.quiz_name,
+        time_limit: parseInt(newPdfQuiz.time_limit),
+        pdf_link: newPdfQuiz.pdf_link.trim(),
+      };
+
+      console.log("PDF Quiz Payload:", payload); // Debug log
+
+      const response = await addQuiz(department.dept_id, payload);
+      console.log("API Response:", response); // Debug log
+
+      await fetchQuizzes();
+      setNewPdfQuiz({ quiz_name: "", time_limit: "", pdf_link: "" });
+      toast.success("PDF Test Added!");
+      setShowAddPdfModal(false);
+      setError(null);
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to create PDF test");
+      console.error("Error creating PDF test:", err);
+      console.error("Error response:", err.response?.data); // Additional debug
+      toast.error("PDF Test Creation Failed!");
     }
   };
 
@@ -99,12 +146,12 @@ const QuizManagement = ({ department, onBack }) => {
 
     try {
       const payload = {
-          quiz_name: editingQuiz.quiz_name,
-          time_limit: parseInt(editingQuiz.time_limit),
-        }
-      
-      await editQuiz(department.dept_id, editingQuiz.quiz_id, payload)
+        quiz_name: editingQuiz.quiz_name,
+        time_limit: parseInt(editingQuiz.time_limit),
+        pdf_link: editingQuiz.pdf_link || null,
+      };
 
+      await editQuiz(department.dept_id, editingQuiz.quiz_id, payload);
       await fetchQuizzes();
       toast.success("Quiz Updated!");
       setShowEditModal(false);
@@ -120,7 +167,7 @@ const QuizManagement = ({ department, onBack }) => {
   const handleDeleteQuiz = async () => {
     if (!deletingQuiz) return;
     try {
-      await deleteQuiz(department.dept_id, deletingQuiz.quiz_id)
+      await deleteQuiz(department.dept_id, deletingQuiz.quiz_id);
       await fetchQuizzes();
       toast.success("Quiz Deleted!");
       setShowDeleteModal(false);
@@ -144,7 +191,6 @@ const QuizManagement = ({ department, onBack }) => {
         dept_id: department.dept_id,
       };
       const link = await generateInviteLink(payload);
-
       setGeneratedLink(link);
       setError(null);
     } catch (err) {
@@ -221,13 +267,22 @@ const QuizManagement = ({ department, onBack }) => {
               </div>
             </div>
 
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="flex items-center justify-center gap-2 bg-[#217486] text-white px-6 py-3 rounded-xl hover:bg-[#1a5d6d] font-medium transition-all hover:shadow-xl hover:shadow-[#217486]/40 w-full sm:w-auto"
-            >
-              <Plus className="w-5 h-5 hidden sm:inline" />
-              Create Quiz
-            </button>
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+              <button
+                onClick={() => setShowAddModal(true)}
+                className="flex items-center justify-center gap-2 bg-[#217486] text-white px-6 py-3 rounded-xl hover:bg-[#1a5d6d] font-medium transition-all hover:shadow-xl hover:shadow-[#217486]/40"
+              >
+                <Plus className="w-5 h-5 hidden sm:inline" />
+                Create Quiz
+              </button>
+              <button
+                onClick={() => setShowAddPdfModal(true)}
+                className="flex items-center justify-center gap-2 bg-[#2a8fa5] text-white px-6 py-3 rounded-xl hover:bg-[#217486] font-medium transition-all hover:shadow-xl hover:shadow-[#2a8fa5]/40"
+              >
+                <FilePlus className="w-5 h-5 hidden sm:inline" />
+                Create PDF Test
+              </button>
+            </div>
           </div>
         </div>
 
@@ -258,13 +313,22 @@ const QuizManagement = ({ department, onBack }) => {
             <p className="text-gray-500 mb-6">
               Create your first quiz to get started with assessments.
             </p>
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-[#217486] text-white rounded-xl hover:bg-[#1a5d6d] font-medium transition-all shadow-lg shadow-[#217486]/30"
-            >
-              <Plus className="w-5 h-5" />
-              Create First Quiz
-            </button>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <button
+                onClick={() => setShowAddModal(true)}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-[#217486] text-white rounded-xl hover:bg-[#1a5d6d] font-medium transition-all shadow-lg shadow-[#217486]/30"
+              >
+                <Plus className="w-5 h-5" />
+                Create First Quiz
+              </button>
+              <button
+                onClick={() => setShowAddPdfModal(true)}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-[#2a8fa5] text-white rounded-xl hover:bg-[#217486] font-medium transition-all shadow-lg shadow-[#2a8fa5]/30"
+              >
+                <FilePlus className="w-5 h-5" />
+                Create PDF Test
+              </button>
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
@@ -273,11 +337,24 @@ const QuizManagement = ({ department, onBack }) => {
                 key={quiz.quiz_id}
                 className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all border border-gray-100 overflow-hidden group"
               >
-                <div className="bg-linear-to-br from-[#217486] to-[#2a8fa5] p-4 sm:p-5">
+                <div
+                  className={`p-4 sm:p-5 ${
+                    quiz.pdf_link
+                      ? "bg-gradient-to-br from-[#2a8fa5] to-[#217486]"
+                      : "bg-gradient-to-br from-[#217486] to-[#2a8fa5]"
+                  }`}
+                >
                   <div className="flex justify-between items-start mb-3">
-                    <h3 className="text-lg sm:text-xl font-bold text-white flex-1 pr-2 leading-tight wrap-break-word">
-                      {quiz.quiz_name}
-                    </h3>
+                    <div className="flex-1 pr-2">
+                      <h3 className="text-lg sm:text-xl font-bold text-white leading-tight break-words">
+                        {quiz.quiz_name}
+                      </h3>
+                      {quiz.pdf_link && (
+                        <span className="inline-block mt-2 px-2 py-1 bg-white/20 text-white text-xs rounded-md font-medium">
+                          PDF Test
+                        </span>
+                      )}
+                    </div>
                     <div className="relative shrink-0">
                       <button
                         onClick={(e) => {
@@ -302,7 +379,7 @@ const QuizManagement = ({ department, onBack }) => {
                             className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-left text-gray-700 hover:bg-gray-50 transition-colors"
                           >
                             <Edit2 className="w-4 h-4 text-[#217486]" />
-                            Edit Quiz
+                            Edit {quiz.pdf_link ? "Test" : "Quiz"}
                           </button>
                           <button
                             onClick={(e) => {
@@ -314,7 +391,7 @@ const QuizManagement = ({ department, onBack }) => {
                             className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-left text-red-600 hover:bg-red-50 transition-colors"
                           >
                             <Trash2 className="w-4 h-4" />
-                            Delete Quiz
+                            Delete {quiz.pdf_link ? "Test" : "Quiz"}
                           </button>
                         </div>
                       )}
@@ -343,32 +420,68 @@ const QuizManagement = ({ department, onBack }) => {
                     </div>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <button
-                      onClick={() => setSelectedQuiz(quiz)}
-                      className="flex-1 flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                      Manage
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openInviteModal(quiz);
-                      }}
-                      disabled={
-                        !quiz.question_count || quiz.question_count === 0
-                      }
-                      className="flex-1 flex items-center justify-center gap-2 bg-[#217486] hover:bg-[#1a5d6d] text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-all shadow-md shadow-[#217486]/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#217486]"
-                      title={
-                        !quiz.question_count || quiz.question_count === 0
-                          ? "Add questions before generating invites"
-                          : "Generate invite link"
-                      }
-                    >
-                      <LinkIcon className="w-4 h-4" />
-                      Invite
-                    </button>
+                  <div className="flex flex-col gap-2">
+                    {quiz.pdf_link ? (
+                      <>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => setSelectedQuiz(quiz)}
+                            className="flex-1 flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                            Manage
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              window.open(quiz.pdf_link, "_blank");
+                            }}
+                            className="flex-1 flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors"
+                          >
+                            <FileText className="w-4 h-4" />
+                            Preview
+                          </button>
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openInviteModal(quiz);
+                          }}
+                          className="w-full flex items-center justify-center gap-2 bg-[#217486] hover:bg-[#1a5d6d] text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-all shadow-md shadow-[#217486]/30"
+                        >
+                          <LinkIcon className="w-4 h-4" />
+                          Invite
+                        </button>
+                      </>
+                    ) : (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setSelectedQuiz(quiz)}
+                          className="flex-1 flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                          Manage
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openInviteModal(quiz);
+                          }}
+                          disabled={
+                            !quiz.question_count || quiz.question_count === 0
+                          }
+                          className="flex-1 flex items-center justify-center gap-2 bg-[#217486] hover:bg-[#1a5d6d] text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-all shadow-md shadow-[#217486]/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#217486]"
+                          title={
+                            !quiz.question_count || quiz.question_count === 0
+                              ? "Add questions before generating invites"
+                              : "Generate invite link"
+                          }
+                        >
+                          <LinkIcon className="w-4 h-4" />
+                          Invite
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -377,11 +490,11 @@ const QuizManagement = ({ department, onBack }) => {
         )}
       </div>
 
-      {/* Add Modal */}
+      {/* Add Quiz Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
-            <div className="bg-linear-to-r from-[#217486] to-[#2a8fa5] p-6">
+            <div className="bg-gradient-to-r from-[#217486] to-[#2a8fa5] p-6">
               <h2 className="text-xl sm:text-2xl font-bold text-white">
                 Create New Quiz
               </h2>
@@ -439,7 +552,100 @@ const QuizManagement = ({ department, onBack }) => {
                 disabled={!newQuiz.quiz_name.trim() || !newQuiz.time_limit}
                 className="flex-1 px-4 py-3 bg-[#217486] hover:bg-[#1a5d6d] text-white rounded-xl transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[#217486]/30 text-sm sm:text-base"
               >
-                Proceed
+                Create Quiz
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add PDF Test Modal */}
+      {showAddPdfModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
+            <div className="bg-gradient-to-r from-[#2a8fa5] to-[#217486] p-6">
+              <h2 className="text-xl sm:text-2xl font-bold text-white">
+                Create PDF Test
+              </h2>
+              <p className="text-white/80 text-sm mt-1">
+                Add a new PDF-based test to your department
+              </p>
+            </div>
+
+            <div className="p-4 sm:p-6 space-y-5">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Test Name
+                </label>
+                <input
+                  type="text"
+                  value={newPdfQuiz.quiz_name}
+                  onChange={(e) =>
+                    setNewPdfQuiz({ ...newPdfQuiz, quiz_name: e.target.value })
+                  }
+                  placeholder="Enter test name"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2a8fa5] focus:border-transparent text-sm sm:text-base"
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Time Limit (minutes)
+                </label>
+                <input
+                  type="number"
+                  value={newPdfQuiz.time_limit}
+                  onChange={(e) =>
+                    setNewPdfQuiz({ ...newPdfQuiz, time_limit: e.target.value })
+                  }
+                  placeholder="Enter time limit"
+                  min="1"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2a8fa5] focus:border-transparent text-sm sm:text-base"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Google Drive PDF Link
+                </label>
+                <input
+                  type="url"
+                  value={newPdfQuiz.pdf_link}
+                  onChange={(e) =>
+                    setNewPdfQuiz({ ...newPdfQuiz, pdf_link: e.target.value })
+                  }
+                  placeholder="https://drive.google.com/file/d/..."
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2a8fa5] focus:border-transparent text-sm sm:text-base"
+                />
+                <p className="text-xs text-gray-500 mt-2">
+                  Paste the shareable link from Google Drive
+                </p>
+              </div>
+            </div>
+
+            <div className="p-4 sm:p-6 bg-gray-50 border-t flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={() => {
+                  setShowAddPdfModal(false);
+                  setNewPdfQuiz({
+                    quiz_name: "",
+                    time_limit: "",
+                    pdf_link: "",
+                  });
+                }}
+                className="flex-1 px-4 py-3 text-gray-700 bg-white hover:bg-gray-100 border border-gray-300 rounded-xl transition-colors font-medium text-sm sm:text-base"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddPdfQuiz}
+                disabled={
+                  !newPdfQuiz.quiz_name.trim() ||
+                  !newPdfQuiz.time_limit ||
+                  !newPdfQuiz.pdf_link.trim()
+                }
+                className="flex-1 px-4 py-3 bg-[#2a8fa5] hover:bg-[#217486] text-white rounded-xl transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[#2a8fa5]/30 text-sm sm:text-base"
+              >
+                Create PDF Test
               </button>
             </div>
           </div>
@@ -450,19 +656,19 @@ const QuizManagement = ({ department, onBack }) => {
       {showEditModal && editingQuiz && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
-            <div className="bg-linear-to-r from-[#217486] to-[#2a8fa5] p-6">
+            <div className="bg-gradient-to-r from-[#217486] to-[#2a8fa5] p-6">
               <h2 className="text-xl sm:text-2xl font-bold text-white">
-                Edit Quiz
+                Edit {editingQuiz.pdf_link ? "PDF Test" : "Quiz"}
               </h2>
               <p className="text-white/80 text-sm mt-1">
-                Update quiz information
+                Update {editingQuiz.pdf_link ? "test" : "quiz"} information
               </p>
             </div>
 
             <div className="p-4 sm:p-6 space-y-5">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Quiz Name
+                  {editingQuiz.pdf_link ? "Test" : "Quiz"} Name
                 </label>
                 <input
                   type="text"
@@ -473,7 +679,7 @@ const QuizManagement = ({ department, onBack }) => {
                       quiz_name: e.target.value,
                     })
                   }
-                  placeholder="Quiz name"
+                  placeholder={`${editingQuiz.pdf_link ? "Test" : "Quiz"} name`}
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#217486] focus:border-transparent text-sm sm:text-base"
                   onKeyPress={(e) => e.key === "Enter" && handleUpdateQuiz()}
                   autoFocus
@@ -497,6 +703,25 @@ const QuizManagement = ({ department, onBack }) => {
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#217486] focus:border-transparent text-sm sm:text-base"
                 />
               </div>
+              {editingQuiz.pdf_link && (
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Google Drive PDF Link
+                  </label>
+                  <input
+                    type="url"
+                    value={editingQuiz.pdf_link}
+                    onChange={(e) =>
+                      setEditingQuiz({
+                        ...editingQuiz,
+                        pdf_link: e.target.value,
+                      })
+                    }
+                    placeholder="https://drive.google.com/file/d/..."
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#217486] focus:border-transparent text-sm sm:text-base"
+                  />
+                </div>
+              )}
             </div>
 
             <div className="p-4 sm:p-6 bg-gray-50 border-t flex flex-col sm:flex-row gap-3">
@@ -516,7 +741,7 @@ const QuizManagement = ({ department, onBack }) => {
                 }
                 className="flex-1 px-4 py-3 bg-[#217486] hover:bg-[#1a5d6d] text-white rounded-xl transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[#217486]/30 text-sm sm:text-base"
               >
-                Update Quiz
+                Update {editingQuiz.pdf_link ? "Test" : "Quiz"}
               </button>
             </div>
           </div>
@@ -531,15 +756,18 @@ const QuizManagement = ({ department, onBack }) => {
               <Trash2 className="w-8 h-8 text-red-600" />
             </div>
             <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 text-center">
-              Delete Quiz
+              Delete {deletingQuiz.pdf_link ? "PDF Test" : "Quiz"}
             </h2>
             <p className="text-sm sm:text-base text-gray-600 text-center mb-6">
               Are you sure you want to delete{" "}
               <strong className="text-gray-900">
                 {deletingQuiz.quiz_name}
               </strong>
-              ? This action cannot be undone and will remove all associated
-              questions.
+              ? This action cannot be undone
+              {!deletingQuiz.pdf_link
+                ? " and will remove all associated questions"
+                : ""}
+              .
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
               <button
@@ -555,7 +783,7 @@ const QuizManagement = ({ department, onBack }) => {
                 onClick={handleDeleteQuiz}
                 className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl transition-colors font-medium shadow-lg shadow-red-600/30 text-sm sm:text-base"
               >
-                Delete Quiz
+                Delete {deletingQuiz.pdf_link ? "Test" : "Quiz"}
               </button>
             </div>
           </div>
@@ -566,7 +794,7 @@ const QuizManagement = ({ department, onBack }) => {
       {showInviteModal && selectedQuizForInvite && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
-            <div className="bg-linear-to-r from-[#217486] to-[#2a8fa5] p-6">
+            <div className="bg-gradient-to-r from-[#217486] to-[#2a8fa5] p-6">
               <div className="flex items-center gap-3 mb-2">
                 <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/20 rounded-xl flex items-center justify-center shrink-0">
                   <LinkIcon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
@@ -656,7 +884,8 @@ const QuizManagement = ({ department, onBack }) => {
                     <p className="text-xs sm:text-sm text-blue-900">
                       <strong className="font-semibold">Note:</strong> Share
                       this link with examinees. They will be prompted to enter
-                      their email when accessing the quiz.
+                      their email when accessing the{" "}
+                      {selectedQuizForInvite.pdf_link ? "test" : "quiz"}.
                     </p>
                   </div>
                   <button
