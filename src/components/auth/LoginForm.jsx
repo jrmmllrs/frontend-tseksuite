@@ -1,44 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { Eye, EyeOff } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../hooks/useAuth";
-import toast from "react-hot-toast";
+import { useAuthContext } from "../../contexts/AuthProvider";
 
 const LoginForm = () => {
-  const navigate = useNavigate();
-  const { login } = useAuth();
-
+  const { formData, setFormData, isLoading, handleLogin } = useAuthContext();
   const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
 
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) navigate("/admin/dashboard");
-  }, [navigate]);
-
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-
-    const validEmail = "francis@getfullsuite.com";
-    const validPassword = "password";
-
-    if (email !== validEmail || password !== validPassword) {
-      toast.error("Invalid email or password");
-      return;
-    }
-
-    const data = await login({
-      email,
-      password,
-    });
-
-    if (data.isSuccess) {
-      toast.success(data.message);
-      navigate("/admin/dashboard");
-    } else {
-      toast.error(data.message);
-    }
+    handleLogin();
   };
 
   return (
@@ -102,9 +72,11 @@ const LoginForm = () => {
               <div className="relative">
                 <input
                   type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="francis@getfullsuite.com"
+                  value={formData.user_email}
+                  onChange={(e) =>
+                    setFormData({ ...formData, user_email: e.target.value })
+                  }
+                  placeholder="enter your email"
                   className="w-full px-4 py-3.5 2xl:py-4 rounded-full text-gray-800 focus:outline-none focus:ring-2 focus:ring-white/50 transition-all duration-200 placeholder-gray-400"
                   style={{ backgroundColor: "#E8F4F6" }}
                   required
@@ -119,8 +91,10 @@ const LoginForm = () => {
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  value={formData.password}
+                  onChange={(e) =>
+                    setFormData({ ...formData, password: e.target.value })
+                  }
                   placeholder="••••••••"
                   className="w-full px-4 py-3.5 2xl:py-4 pr-12 rounded-full text-gray-800 focus:outline-none focus:ring-2 focus:ring-white/50 transition-all duration-200 placeholder-gray-400"
                   style={{ backgroundColor: "#E8F4F6" }}
@@ -139,6 +113,7 @@ const LoginForm = () => {
             <div className="pt-6 2xl:pt-8">
               <button
                 type="submit"
+                disabled={isLoading}
                 className="w-full text-white font-semibold py-4 2xl:py-5 rounded-full transition-all duration-300 hover:shadow-lg transform hover:-translate-y-0.5 2xl:text-xl"
                 style={{
                   backgroundColor: "#2E99B0",

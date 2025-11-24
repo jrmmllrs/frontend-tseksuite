@@ -1,5 +1,4 @@
 import DashboardCard from "../../components/admin/Card";
-import { useAuth } from "../../hooks/useAuth";
 import { useMediaQuery } from "@mui/material";
 import toast from "react-hot-toast";
 import { useEffect, useState } from "react";
@@ -7,6 +6,7 @@ import { getAllExaminers, getAllResults } from "../../../api/api";
 import NoDataFound from "../../components/NoDataFound";
 import LoadingIndicator from "../../components/LoadingIndicator";
 import { User, CircleCheck, Ban, X, Check } from "lucide-react";
+import { useAuthContext } from "../../contexts/AuthProvider";
 
 // Recharts imports
 import {
@@ -23,14 +23,21 @@ import {
   Legend,
 } from "recharts";
 
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
 
 function DashboardPage() {
-  const { data: user, isLoading, isError } = useAuth();
   const isMobile = useMediaQuery("(max-width:600px)");
   const [examiners, setExaminers] = useState([]);
   const [results, setResults] = useState([]);
   const [isDataLoading, setIsDataLoading] = useState(false);
+  const { user, isLoading, error } = useAuthContext();
 
   const fetchAllExaminers = async () => {
     try {
@@ -93,15 +100,17 @@ function DashboardPage() {
     return acc;
   }, {});
 
-  const departmentData = Object.entries(departmentCounts).map(([name, value]) => ({
-    name,
-    value,
-  }));
+  const departmentData = Object.entries(departmentCounts).map(
+    ([name, value]) => ({
+      name,
+      value,
+    })
+  );
 
   const COLORS = ["#22c55e", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6"];
 
   if (isLoading) return <div>Loading user...</div>;
-  if (isError || !user) return <div>Failed to load user</div>;
+  // if (error || !user) return <div>Failed to load user</div>;
 
   return (
     <div className="h-screen w-full pb-3 px-4 lg:px-43 sm:px-6 md:px-1 py-6 sm:mt-0 md:mb-30 lg:mb-0">
@@ -134,28 +143,75 @@ function DashboardPage() {
           <div className="w-full md:w-1/2">
             <Card className="h-100">
               <CardHeader>
-                <CardTitle className="text-cyan-700">Monthly Test Status</CardTitle>
-                <CardDescription>Track Completed vs Abandoned tests by month</CardDescription>
+                <CardTitle className="text-cyan-700">
+                  Monthly Test Status
+                </CardTitle>
+                <CardDescription>
+                  Track Completed vs Abandoned tests by month
+                </CardDescription>
               </CardHeader>
               <CardContent className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                  <AreaChart
+                    data={chartData}
+                    margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                  >
                     <defs>
-                      <linearGradient id="colorCompleted" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#22c55e" stopOpacity={0.8} />
-                        <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
+                      <linearGradient
+                        id="colorCompleted"
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1"
+                      >
+                        <stop
+                          offset="5%"
+                          stopColor="#22c55e"
+                          stopOpacity={0.8}
+                        />
+                        <stop
+                          offset="95%"
+                          stopColor="#22c55e"
+                          stopOpacity={0}
+                        />
                       </linearGradient>
-                      <linearGradient id="colorAbandoned" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8} />
-                        <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+                      <linearGradient
+                        id="colorAbandoned"
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1"
+                      >
+                        <stop
+                          offset="5%"
+                          stopColor="#ef4444"
+                          stopOpacity={0.8}
+                        />
+                        <stop
+                          offset="95%"
+                          stopColor="#ef4444"
+                          stopOpacity={0}
+                        />
                       </linearGradient>
                     </defs>
                     <XAxis dataKey="month" />
                     <YAxis />
                     <CartesianGrid strokeDasharray="3 3" />
                     <Tooltip />
-                    <Area type="monotone" dataKey="COMPLETED" stroke="#22c55e" fillOpacity={1} fill="url(#colorCompleted)" />
-                    <Area type="monotone" dataKey="ABANDONED" stroke="#ef4444" fillOpacity={1} fill="url(#colorAbandoned)" />
+                    <Area
+                      type="monotone"
+                      dataKey="COMPLETED"
+                      stroke="#22c55e"
+                      fillOpacity={1}
+                      fill="url(#colorCompleted)"
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="ABANDONED"
+                      stroke="#ef4444"
+                      fillOpacity={1}
+                      fill="url(#colorAbandoned)"
+                    />
                   </AreaChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -169,8 +225,12 @@ function DashboardPage() {
           <div className="w-full md:w-1/2">
             <Card className="h-100">
               <CardHeader>
-                <CardTitle className="text-cyan-700">Most Examined Departments</CardTitle>
-                <CardDescription>Distribution of examinees by department</CardDescription>
+                <CardTitle className="text-cyan-700">
+                  Most Examined Departments
+                </CardTitle>
+                <CardDescription>
+                  Distribution of examinees by department
+                </CardDescription>
               </CardHeader>
               <CardContent className="h-64 flex items-center justify-center">
                 <ResponsiveContainer width="100%" height="100%">
@@ -187,34 +247,45 @@ function DashboardPage() {
                       label
                     >
                       {departmentData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={COLORS[index % COLORS.length]}
+                        />
                       ))}
                     </Pie>
                     <Tooltip
-                    cursor={false}
+                      cursor={false}
                       content={({ active, payload }) => {
                         if (active && payload && payload.length) {
                           const deptName = payload[0].name;
                           const totalAbandoned = results.filter(
-                            (r) => r.department === deptName && r.status === "ABANDONED"
+                            (r) =>
+                              r.department === deptName &&
+                              r.status === "ABANDONED"
                           ).length;
                           const totalCompleted = results.filter(
-                            (r) => r.department === deptName && r.status === "COMPLETED"
+                            (r) =>
+                              r.department === deptName &&
+                              r.status === "COMPLETED"
                           ).length;
 
                           return (
                             <div className="rounded-xl bg-white/30 backdrop-blur-md border border-white/20 px-6 py-4 shadow-lg">
-                              <p className="text-sm font-semibold text-gray-800 mb-3">{deptName}</p>
+                              <p className="text-sm font-semibold text-gray-800 mb-3">
+                                {deptName}
+                              </p>
                               <div className="flex items-center gap-2">
                                 <Check className="h-6 w-6 text-green-500" />
-                                <p className="text-sm text-gray-600">Completed: {totalCompleted}</p>
+                                <p className="text-sm text-gray-600">
+                                  Completed: {totalCompleted}
+                                </p>
                               </div>
                               <div className="flex items-center gap-2">
                                 <X className="h-6 w-6 text-red-500" />
-                                <p className="text-sm text-gray-600">Abandoned: {totalAbandoned}</p>
+                                <p className="text-sm text-gray-600">
+                                  Abandoned: {totalAbandoned}
+                                </p>
                               </div>
-                              
-                              
                             </div>
                           );
                         }
@@ -226,7 +297,9 @@ function DashboardPage() {
                 </ResponsiveContainer>
               </CardContent>
               <CardFooter>
-                <p className="text-gray-500 text-sm">Top departments based on test count</p>
+                <p className="text-gray-500 text-sm">
+                  Top departments based on test count
+                </p>
               </CardFooter>
             </Card>
           </div>
