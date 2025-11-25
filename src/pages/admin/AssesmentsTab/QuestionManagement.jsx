@@ -236,9 +236,8 @@ const QuestionModal = ({
     }
   };
 
-  const questionTypes = isPdfTest
-    ? ["MC", "CB", "TF", "DESC"]
-    : ["MC", "CB", "TF"];
+  // Always include all question types including DESC
+  const questionTypes = ["MC", "CB", "TF", "DESC"];
 
   const getTypeLabel = (type) => {
     switch (type) {
@@ -276,11 +275,7 @@ const QuestionModal = ({
             <label className="text-xs sm:text-sm font-semibold text-gray-700 mb-2 block">
               Question Type
             </label>
-            <div
-              className={`grid ${
-                isPdfTest ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3"
-              } gap-2`}
-            >
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {questionTypes.map((t) => (
                 <button
                   key={t}
