@@ -734,14 +734,14 @@ const ApplicantTestPage = () => {
 
       <div className="flex-1 px-6 sm:px-12 lg:px-24 xl:px-32 pb-12">
    <div className="min-h-screen py-4">
-      <div className="max-w-[2000px] mx-auto px-4 lg:px-6">
+      <div className="max-w-[15000px] mx-auto px-4 lg:px-6">
         {/* Split Screen Layout - PDF on left, Questions on right */}
         {hasPdfReference ? (
           <div className="grid grid-cols-1 lg:grid-cols-[60%_40%] gap-6 min-h-[calc(100vh-20rem)]">
             {/* LEFT SIDE - ENHANCED PDF VIEWER */}
             <div className="bg-white rounded-2xl shadow-xl border border-gray-200 flex flex-col overflow-hidden">
               {/* PDF Header */}
-              <div className="px-6 py-4 bg-gradient-to-r from-blue-600 to-cyan-600 text-white">
+              <div className="px-6 py-4 bg-cyan-600 text-white">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
@@ -946,7 +946,7 @@ const ApplicantTestPage = () => {
               <button
                 onClick={handleNext}
                 disabled={isSubmitting}
-                className={`w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white font-bold py-4 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 text-lg shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed ${
+                className={`w-full bg-cyan-600 hover:from-cyan-700 hover:to-blue-700 text-white font-bold py-4 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 text-lg shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed ${
                   isSubmitting ? "cursor-not-allowed" : ""
                 }`}
               >
@@ -980,7 +980,7 @@ const ApplicantTestPage = () => {
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2.5">
                   <div 
-                    className="bg-gradient-to-r from-cyan-500 to-blue-500 h-2.5 rounded-full transition-all duration-300"
+                    className="bg-cyan-600 h-2.5 rounded-full transition-all duration-300"
                     style={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }}
                   ></div>
                 </div>
