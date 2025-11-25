@@ -972,39 +972,40 @@ const ApplicantTestPage = () => {
       </div>
 
       <div className="flex-1 px-6 sm:px-12 lg:px-24 xl:px-32 pb-12">
-   <div className="min-h-screen py-4">
-      <div className="max-w-[15000px] mx-auto px-4 lg:px-6">
-        {/* Split Screen Layout - PDF on left, Questions on right */}
-        {hasPdfReference ? (
-          <div className="grid grid-cols-1 lg:grid-cols-[60%_40%] gap-6 min-h-[calc(100vh-20rem)]">
-            {/* LEFT SIDE - ENHANCED PDF VIEWER */}
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-200 flex flex-col overflow-hidden">
-              {/* PDF Header */}
-              <div className="px-6 py-4 bg-cyan-600 text-white">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-lg">Reference Document</h3>
-                      <p className="text-sm text-blue-100">{quizData.title || 'Study Material'}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              {/* PDF Viewer Area - Much Larger */}
-              <div className="flex-1 overflow-auto bg-gray-800 p-6">
-                {pdfError ? (
-                  <div className="flex items-center justify-center h-full">
-                    <div className="text-center py-12 bg-white rounded-lg p-8">
-                      <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
+        <div className="min-h-screen py-4">
+          <div className="max-w-[15000px] mx-auto px-4 lg:px-6">
+            {/* Split Screen Layout - PDF on left, Questions on right */}
+            {hasPdfReference ? (
+              <div className="grid grid-cols-1 lg:grid-cols-[60%_40%] gap-6 min-h-[calc(100vh-20rem)]">
+                {/* LEFT SIDE - ENHANCED PDF VIEWER */}
+                <div className="bg-white rounded-2xl shadow-xl border border-gray-200 flex flex-col overflow-hidden">
+                  {/* PDF Header */}
+                  <div className="px-6 py-4 bg-cyan-600 text-white">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+                          <svg
+                            className="w-6 h-6"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                            />
+                          </svg>
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-lg">
+                            Reference Document
+                          </h3>
+                          <p className="text-sm text-blue-100">
+                            {quizData.title || "Study Material"}
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1276,47 +1277,40 @@ const ApplicantTestPage = () => {
                     )}
                   </div>
 
-              {/* Action Button */}
-              <button
-                onClick={handleNext}
-                disabled={isSubmitting}
-                className={`w-full bg-cyan-600 hover:from-cyan-700 hover:to-blue-700 text-white font-bold py-4 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 text-lg shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed ${
-                  isSubmitting ? "cursor-not-allowed" : ""
-                }`}
-              >
-                {isSubmitting ? (
-                  <>
-                    <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
-                    Submitting...
-                  </>
-                ) : (
-                  <>
-                    {currentQuestionIndex < questions.length - 1 ? "Next Question" : "Submit Quiz"}
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                    </svg>
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        ) : (
-          // NO PDF - Regular single column layout
-          <div className="max-w-4xl mx-auto">
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
-              {/* Progress Bar */}
-              <div className="mb-8">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-semibold text-gray-600">Progress</span>
-                  <span className="text-sm font-bold text-cyan-600">
-                    Question {currentQuestionIndex + 1} / {questions.length}
-                  </span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2.5">
-                  <div 
-                    className="bg-cyan-600 h-2.5 rounded-full transition-all duration-300"
-                    style={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }}
-                  ></div>
+                  {/* Action Button */}
+                  <button
+                    onClick={handleNext}
+                    disabled={isSubmitting}
+                    className={`w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-4 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 text-lg shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed ${
+                      isSubmitting ? "cursor-not-allowed" : ""
+                    }`}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
+                        Submitting...
+                      </>
+                    ) : (
+                      <>
+                        {currentQuestionIndex < questions.length - 1
+                          ? "Next Question"
+                          : "Submit Quiz"}
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2.5}
+                            d="M13 7l5 5m0 0l-5 5m5-5H6"
+                          />
+                        </svg>
+                      </>
+                    )}
+                  </button>
                 </div>
               </div>
             ) : (
