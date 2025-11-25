@@ -188,7 +188,7 @@ export const updateQuestion = async (quizId, questionId, payload) => {
 
 export const deleteQuestion = async (quizId, questionId) => {
   try {
-    await axios.delete(`/question/${quizId}/delete/${questionId}`);
+    await api.delete(`/question/${quizId}/delete/${questionId}`);
   } catch (err) {
     console.error(err);
   }
@@ -206,8 +206,6 @@ export const getOptions = async (quizId) => {
 export const getAnswers = async (quizId) => {
   try {
     const res = await api.get(`/answer/get/${quizId}`);
-
-    console.log(res.data.data);
 
     return res.data.data || [];
   } catch (err) {
