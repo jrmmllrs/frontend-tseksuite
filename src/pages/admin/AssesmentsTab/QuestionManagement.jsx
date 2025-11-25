@@ -64,10 +64,27 @@ const QuestionModal = ({
     }));
   };
 
+  // const setCorrectAnswer = (index) => {
+  //   if (question.question_type === "CB" || question.question_type === "DESC") {
+  //     updateOption(index, "is_correct", !question.options[index].is_correct);
+  //   } else {
+  //     setQuestion((prev) => ({
+  //       ...prev,
+  //       options: prev.options.map((opt, i) => ({
+  //         ...opt,
+  //         is_correct: i === index,
+  //       })),
+  //     }));
+  //   }
+  // };
+
   const setCorrectAnswer = (index) => {
-    if (question.question_type === "CB" || question.question_type === "DESC") {
+    if (question.question_type === "CB") {
       updateOption(index, "is_correct", !question.options[index].is_correct);
-    } else {
+    } else if (
+      question.question_type === "MC" ||
+      question.question_type === "TF"
+    ) {
       setQuestion((prev) => ({
         ...prev,
         options: prev.options.map((opt, i) => ({
@@ -427,25 +444,25 @@ const QuestionManagement = ({ quiz, onBack }) => {
 
       const withOptions = await Promise.all(
         res.map(async (q) => {
-          if (q.question_type === "DESC") {
-            // For descriptive questions, try to get the answer
-            try {
-              const optRes = await getAnswer(q.question_id);
-              return { ...q, options: optRes };
-            } catch (err) {
-              // If no answer exists, create empty option
-              return { ...q, options: [{ option_text: "", is_correct: true }] };
-            }
-          } else {
-            const optRes = await getAnswer(q.question_id);
-            return { ...q, options: optRes };
+          let options = [];
+          try {
+            options = await getAnswer(q.question_id);
+          } catch (err) {
+            options = [];
           }
+
+          if (q.question_type === "DESC" && options.length === 0) {
+            options = [{ option_text: "", is_correct: true }];
+          }
+
+          return { ...q, options };
         })
       );
 
       setQuestions(withOptions);
     } catch (err) {
       console.error("Fetch error:", err);
+      toast.error("Failed to fetch questions");
     } finally {
       setLoading(false);
     }
@@ -476,25 +493,74 @@ const QuestionManagement = ({ quiz, onBack }) => {
     }
   };
 
+  // const handleSave = async () => {
+  //   const q = currentQuestion;
+  //   if (!q.question_text.trim()) return toast.error("Question text required");
+
+  //   if (q.question_type === "DESC") {
+  //     if (!q.options[0]?.option_text.trim()) {
+  //       return toast.error(
+  //         "Correct answer is required for descriptive questions"
+  //       );
+  //     }
+  //   } else if (q.question_type === "MC" || q.question_type === "CB") {
+  //     if (!q.options || q.options.length < 2) {
+  //       return toast.error("At least 2 options are required");
+  //     }
+  //     for (let i = 0; i < q.options.length; i++) {
+  //       if (!q.options[i].option_text.trim()) {
+  //         return toast.error(`All options must have text!`);
+  //       }
+  //     }
+  //   }
+
+  //   try {
+  //     if (editingIndex !== null) {
+  //       await updateQuestion(quiz.quiz_id, q.question_id, q);
+  //       toast.success("Question Updated!");
+
+  //       const original = questions[editingIndex];
+  //       const originalIds = original.options
+  //         .map((o) => o.answer_id)
+  //         .filter(Boolean);
+
+  //       for (const opt of q.options) {
+  //         if (opt.answer_id) {
+  //           await updateAnswer(opt.answer_id, opt);
+  //         } else {
+  //           await addAnswer(q.question_id, opt);
+  //         }
+  //       }
+
+  //       for (const oldId of originalIds) {
+  //         if (!q.options.find((o) => o.answer_id === oldId)) {
+  //           await deleteAnswer(oldId);
+  //         }
+  //       }
+  //     } else {
+  //       const { question_id } = await addQuestion(quiz.quiz_id, q);
+  //       toast.success("Question Added!");
+  //       for (const opt of q.options) {
+  //         await addAnswer(question_id, opt);
+  //       }
+  //     }
+  //     setModalOpen(false);
+  //     fetchQuestions();
+  //   } catch (err) {
+  //     console.error("Save error:", err);
+  //     toast.error("Failed to save question");
+  //   }
+  // };
+
   const handleSave = async () => {
     const q = currentQuestion;
     if (!q.question_text.trim()) return toast.error("Question text required");
 
-    if (q.question_type === "DESC") {
-      if (!q.options[0]?.option_text.trim()) {
-        return toast.error(
-          "Correct answer is required for descriptive questions"
-        );
-      }
-    } else if (q.question_type === "MC" || q.question_type === "CB") {
-      if (!q.options || q.options.length < 2) {
-        return toast.error("At least 2 options are required");
-      }
-      for (let i = 0; i < q.options.length; i++) {
-        if (!q.options[i].option_text.trim()) {
-          return toast.error(`All options must have text!`);
-        }
-      }
+    if (
+      (q.question_type === "MC" || q.question_type === "CB") &&
+      (!q.options || q.options.length < 2)
+    ) {
+      return toast.error("At least 2 options are required");
     }
 
     try {
@@ -502,23 +568,20 @@ const QuestionManagement = ({ quiz, onBack }) => {
         await updateQuestion(quiz.quiz_id, q.question_id, q);
         toast.success("Question Updated!");
 
-        const original = questions[editingIndex];
-        const originalIds = original.options
+        // Sync options
+        const originalOptions = questions[editingIndex].options || [];
+        const originalIds = originalOptions
           .map((o) => o.answer_id)
           .filter(Boolean);
 
         for (const opt of q.options) {
-          if (opt.answer_id) {
-            await updateAnswer(opt.answer_id, opt);
-          } else {
-            await addAnswer(q.question_id, opt);
-          }
+          if (opt.answer_id) await updateAnswer(opt.answer_id, opt);
+          else await addAnswer(q.question_id, opt);
         }
 
         for (const oldId of originalIds) {
-          if (!q.options.find((o) => o.answer_id === oldId)) {
+          if (!q.options.find((o) => o.answer_id === oldId))
             await deleteAnswer(oldId);
-          }
         }
       } else {
         const { question_id } = await addQuestion(quiz.quiz_id, q);
@@ -527,6 +590,7 @@ const QuestionManagement = ({ quiz, onBack }) => {
           await addAnswer(question_id, opt);
         }
       }
+
       setModalOpen(false);
       fetchQuestions();
     } catch (err) {
