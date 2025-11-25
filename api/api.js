@@ -19,36 +19,36 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-export const fetchCurrentUser = async () => {
-  const token = localStorage.getItem("token");
+// export const fetchCurrentUser = async () => {
+//   const token = localStorage.getItem("token");
 
-  if (!token) {
-    throw new Error("No token");
-  }
+//   if (!token) {
+//     throw new Error("No token");
+//   }
 
-  console.log("Token", token);
+//   console.log("Token", token);
 
-  return {
-    id: 1,
-    name: "Francis Alex",
-    role: "Admin",
-    token,
-  };
-};
+//   return {
+//     id: 1,
+//     name: "Francis Alex",
+//     role: "Admin",
+//     token,
+//   };
+// };
 
-export const loginUser = async (loginCredentials) => {
-  return {
-    token: "thisissampletoken",
-    id: 1,
-    name: "Francis alex",
-    role: "Admin",
-    ...loginCredentials,
-  };
-};
+// export const loginUser = async (loginCredentials) => {
+//   return {
+//     token: "thisissampletoken",
+//     id: 1,
+//     name: "Francis alex",
+//     role: "Admin",
+//     ...loginCredentials,
+//   };
+// };
 
 export const getAllResults = async () => {
   try {
-    const response = await api.get(`${API_BASE_URL}/result/get`);
+    const response = await api.get(`/result/get`);
     if (!response) {
       console.log("Error, API");
     }
@@ -66,7 +66,7 @@ export const getAllResults = async () => {
 
 export const getAllExaminers = async () => {
   try {
-    const response = await api.get(`${API_BASE_URL}/examiner/get`);
+    const response = await api.get(`/examiner/get`);
 
     if (!response) {
       console.log("Failed to fetch data!");
@@ -83,7 +83,7 @@ export const getAllExaminers = async () => {
 
 export const getAllDepartments = async () => {
   try {
-    const response = await api.get(`${API_BASE_URL}/department/get`);
+    const response = await api.get(`/department/get`);
 
     if (!response) {
       console.log("Cannot fetch departments!");
@@ -98,12 +98,9 @@ export const getAllDepartments = async () => {
 
 export const toggleDepartmentActiveStatus = async (department) => {
   try {
-    await api.patch(
-      `${API_BASE_URL}/department/toggle-status/${department.dept_id}`,
-      {
-        is_active: !department.is_active,
-      }
-    );
+    await api.patch(`/department/toggle-status/${department.dept_id}`, {
+      is_active: !department.is_active,
+    });
   } catch (error) {
     console.error(error);
     toast.error(error);
@@ -112,7 +109,7 @@ export const toggleDepartmentActiveStatus = async (department) => {
 
 export const addDepartment = async (newDeptName) => {
   try {
-    await api.post(`${API_BASE_URL}/department/create`, {
+    await api.post(`/department/create`, {
       dept_name: newDeptName,
       is_active: true,
     });
@@ -124,7 +121,7 @@ export const addDepartment = async (newDeptName) => {
 
 export const editDepartment = async (editingDept) => {
   try {
-    await api.put(`${API_BASE_URL}/department/update/${editingDept.dept_id}`, {
+    await api.put(`/department/update/${editingDept.dept_id}`, {
       dept_name: editingDept.dept_name,
     });
   } catch (error) {
@@ -135,9 +132,7 @@ export const editDepartment = async (editingDept) => {
 
 export const deleteDepartment = async (deletingDept) => {
   try {
-    await api.delete(
-      `${API_BASE_URL}/department/delete/${deletingDept.dept_id}`
-    );
+    await api.delete(`/department/delete/${deletingDept.dept_id}`);
   } catch (error) {
     console.error(error);
     toast.error(error);
@@ -166,10 +161,7 @@ export const submitResults = async ({ results, examinerId }) => {
 
 export const addQuestion = async (quizId, payload) => {
   try {
-    const res = await api.post(
-      `${API_BASE_URL}/question/${quizId}/create`,
-      payload
-    );
+    const res = await api.post(`/question/${quizId}/create`, payload);
 
     return { ...res.data.data };
   } catch (err) {
@@ -179,7 +171,7 @@ export const addQuestion = async (quizId, payload) => {
 
 export const getQuestions = async (quizId) => {
   try {
-    const response = await api.get(`${API_BASE_URL}/question/get/${quizId}`);
+    const response = await api.get(`/question/get/${quizId}`);
     return response.data.data || [];
   } catch (err) {
     console.error(err);
@@ -188,10 +180,7 @@ export const getQuestions = async (quizId) => {
 
 export const updateQuestion = async (quizId, questionId, payload) => {
   try {
-    await api.put(
-      `${API_BASE_URL}/question/${quizId}/update/${questionId}`,
-      payload
-    );
+    await api.put(`/question/${quizId}/update/${questionId}`, payload);
   } catch (err) {
     console.error(err);
   }
@@ -199,9 +188,7 @@ export const updateQuestion = async (quizId, questionId, payload) => {
 
 export const deleteQuestion = async (quizId, questionId) => {
   try {
-    await axios.delete(
-      `${API_BASE_URL}/question/${quizId}/delete/${questionId}`
-    );
+    await axios.delete(`/question/${quizId}/delete/${questionId}`);
   } catch (err) {
     console.error(err);
   }
@@ -209,7 +196,7 @@ export const deleteQuestion = async (quizId, questionId) => {
 
 export const getOptions = async (questionId) => {
   try {
-    const response = await api.get(`${API_BASE_URL}/answer/test/${questionId}`);
+    const response = await api.get(`/answer/test/${questionId}`);
     return response.data.data || [];
   } catch (err) {
     console.error(err);
@@ -218,7 +205,7 @@ export const getOptions = async (questionId) => {
 
 export const getAnswer = async (questionId) => {
   try {
-    const res = await api.get(`${API_BASE_URL}/answer/get/${questionId}`);
+    const res = await api.get(`/answer/get/${questionId}`);
 
     return res.data.data || [];
   } catch (err) {
@@ -228,7 +215,7 @@ export const getAnswer = async (questionId) => {
 
 export const updateAnswer = async (answerId, options) => {
   try {
-    await api.put(`${API_BASE_URL}/answer/${answerId}/update`, options);
+    await api.put(`/answer/${answerId}/update`, options);
   } catch (err) {
     console.error(err);
   }
@@ -236,7 +223,7 @@ export const updateAnswer = async (answerId, options) => {
 
 export const addAnswer = async (questionId, options) => {
   try {
-    await api.post(`${API_BASE_URL}/answer/${questionId}/create`, options);
+    await api.post(`/answer/${questionId}/create`, options);
   } catch (err) {
     console.error(err);
   }
@@ -244,7 +231,7 @@ export const addAnswer = async (questionId, options) => {
 
 export const deleteAnswer = async (oldId) => {
   try {
-    await api.delete(`${API_BASE_URL}/answer/${oldId}/delete`);
+    await api.delete(`/answer/${oldId}/delete`);
   } catch (err) {
     console.error(err);
   }
@@ -268,7 +255,7 @@ export const addResult = async (payload) => {
 export const addBridge = async (payload) => {
   try {
     const headers = { headers: { "Content-Type": "application/json" } };
-    await api.post(`${API_BASE_URL}/bridge/create`, payload, headers);
+    await api.post(`/bridge/create`, payload, headers);
   } catch (err) {
     console.error(err);
   }
@@ -276,7 +263,7 @@ export const addBridge = async (payload) => {
 
 export const getQuizzes = async (deptId) => {
   try {
-    const response = await api.get(`${API_BASE_URL}/quiz/get/${deptId}`);
+    const response = await api.get(`/quiz/get/${deptId}`);
 
     return response.data.data || [];
   } catch (err) {
@@ -286,7 +273,7 @@ export const getQuizzes = async (deptId) => {
 
 export const addQuiz = async (deptId, payload) => {
   try {
-    await api.post(`${API_BASE_URL}/quiz/${deptId}/create`, payload);
+    await api.post(`/quiz/${deptId}/create`, payload);
   } catch (err) {
     console.error(err);
   }
@@ -302,7 +289,7 @@ export const editQuiz = async (deptId, quizId, payload) => {
 
 export const deleteQuiz = async (deptId, quizId) => {
   try {
-    await api.delete(`${API_BASE_URL}/quiz/${deptId}/delete/${quizId}`);
+    await api.delete(`/quiz/${deptId}/delete/${quizId}`);
   } catch (err) {
     console.error(err);
   }
@@ -310,7 +297,7 @@ export const deleteQuiz = async (deptId, quizId) => {
 
 export const generateInviteLink = async (payload) => {
   try {
-    const link = await api.post(`${API_BASE_URL}/invitation/generate`, payload);
+    const link = await api.post(`/invitation/generate`, payload);
 
     return link.data.data.link || "";
   } catch (err) {
@@ -320,9 +307,7 @@ export const generateInviteLink = async (payload) => {
 
 export const validateInvitationLink = async (token) => {
   try {
-    const response = await api.get(
-      `${API_BASE_URL}/invitation/validate/${token}`
-    );
+    const response = await api.get(`/invitation/validate/${token}`);
 
     const status = response.status;
 
@@ -334,11 +319,9 @@ export const validateInvitationLink = async (token) => {
 
 export const submitExaminerData = async (payload) => {
   try {
-    const response = await api.post(
-      `${API_BASE_URL}/invitation/complete`,
-      payload,
-      { headers: { "Content-Type": "application/json" } }
-    );
+    const response = await api.post(`/invitation/complete`, payload, {
+      headers: { "Content-Type": "application/json" },
+    });
 
     console.log(response);
     return response.data.data;
@@ -349,7 +332,7 @@ export const submitExaminerData = async (payload) => {
 
 export const submitAbandonTest = async (payload) => {
   try {
-    await api.post(`${API_BASE_URL}/result/create`, payload);
+    await api.post(`/result/create`, payload);
   } catch (err) {
     console.error(err);
   }
