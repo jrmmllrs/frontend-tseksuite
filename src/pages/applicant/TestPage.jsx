@@ -1,12 +1,30 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Document, Page, pdfjs } from 'react-pdf';
+import { Document, Page, pdfjs } from "react-pdf";
 
 import ClockIcon from "../../assets/Clock.svg";
 import Footer from "../../components/applicant/Footer";
-import { Breadcrumbs, Stack, Typography, Dialog, DialogTitle, DialogContent, DialogActions, Button } from '@mui/material'
-import { getQuestions, getOptions, addResult, addBridge } from "../../../api/api";
-import { countAnswer, formatAnswers, getQuestionTypeLabel } from "../../../helpers/helpers";
+import {
+  Breadcrumbs,
+  Stack,
+  Typography,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+} from "@mui/material";
+import {
+  getQuestions,
+  getOptions,
+  addResult,
+  addBridge,
+} from "../../../api/api";
+import {
+  countAnswer,
+  formatAnswers,
+  getQuestionTypeLabel,
+} from "../../../helpers/helpers";
 
 // Configure PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
@@ -42,11 +60,11 @@ const ApplicantTestPage = () => {
   // Modal states
   const [modalState, setModalState] = useState({
     open: false,
-    type: '', 
-    title: '',
-    message: '',
+    type: "",
+    title: "",
+    message: "",
     onConfirm: null,
-    showCancel: false
+    showCancel: false,
   });
 
   // Check mobile screen size
@@ -69,7 +87,7 @@ const ApplicantTestPage = () => {
       title,
       message,
       onConfirm,
-      showCancel
+      showCancel,
     });
   };
 
@@ -77,11 +95,11 @@ const ApplicantTestPage = () => {
   const closeModal = () => {
     setModalState({
       open: false,
-      type: '',
-      title: '',
-      message: '',
+      type: "",
+      title: "",
+      message: "",
       onConfirm: null,
-      showCancel: false
+      showCancel: false,
     });
   };
 
@@ -92,14 +110,18 @@ const ApplicantTestPage = () => {
 
   // Initial data loading
   useEffect(() => {
-    const selectedQuiz = location.state?.quizData || JSON.parse(localStorage.getItem("selectedQuiz") || "null");
-    const applicant = location.state?.applicantData || JSON.parse(localStorage.getItem("applicantData") || "{}");
+    const selectedQuiz =
+      location.state?.quizData ||
+      JSON.parse(localStorage.getItem("selectedQuiz") || "null");
+    const applicant =
+      location.state?.applicantData ||
+      JSON.parse(localStorage.getItem("applicantData") || "{}");
 
     if (!selectedQuiz || !applicant.examiner_id) {
       openModal(
-        'error',
-        '⚠️ Error',
-        'No quiz selected or applicant data missing. Redirecting...',
+        "error",
+        "⚠️ Error",
+        "No quiz selected or applicant data missing. Redirecting...",
         () => {
           closeModal();
           navigate("/quiz-selection");
@@ -151,7 +173,7 @@ const ApplicantTestPage = () => {
     if (!currentQuestion) return;
 
     const savedAnswer = userAnswers[currentQuestionIndex];
-    
+
     if (currentQuestion.question_type === "DESC") {
       setDescriptiveAnswer(savedAnswer || "");
     } else if (currentQuestion.question_type === "CB") {
@@ -199,25 +221,37 @@ const ApplicantTestPage = () => {
       setLoading(true);
       const questionsData = await getQuestions(quizId);
 
-      const questionsWithOptions = await Promise.all(
-        questionsData.map(async (question) => {
-          try {
-            const options = await getOptions(question.question_id);
-            return {
-              ...question,
-              options: options.map((opt) => ({
-                answer_id: opt.answer_id,
-                option_text: opt.option_text,
-                is_correct: opt.is_correct,
-              })),
-              explanation: question.explanation || "",
-            };
-          } catch (err) {
-            console.error(`Error fetching options for question ${question.question_id}:`, err);
-            return { ...question, options: [], explanation: question.explanation || "" };
-          }
-        })
-      );
+      // Fetch all answers for the quiz at once (excluding is_correct)
+      const answersData = await getOptions(quizId);
+
+      // Group answers by question_id
+      const answersByQuestion = {};
+      answersData.forEach((answer) => {
+        if (!answersByQuestion[answer.question_id]) {
+          answersByQuestion[answer.question_id] = [];
+        }
+        answersByQuestion[answer.question_id].push(answer);
+      });
+
+      // Attach options to each question
+      const questionsWithOptions = questionsData.map((question) => {
+        let options = answersByQuestion[question.question_id] || [];
+
+        // For DESC, if no options, provide a default (though not used in rendering)
+        if (question.question_type === "DESC" && options.length === 0) {
+          options = [{ answer_id: null, option_text: "", is_correct: true }];
+        }
+
+        return {
+          ...question,
+          options: options.map((opt) => ({
+            answer_id: opt.answer_id,
+            option_text: opt.option_text,
+            // Note: is_correct is not included as it's excluded from the API response
+          })),
+          explanation: question.explanation || "",
+        };
+      });
 
       setQuestions(questionsWithOptions);
       setUserAnswers(new Array(questionsWithOptions.length).fill(null));
@@ -225,9 +259,9 @@ const ApplicantTestPage = () => {
       console.error("Error fetching questions:", error);
       if (!quizData?.pdf_link) {
         openModal(
-          'error',
-          '⚠️ Error',
-          'Failed to load questions. Please try again.',
+          "error",
+          "⚠️ Error",
+          "Failed to load questions. Please try again.",
           () => {
             closeModal();
             navigate("/quiz-selection");
@@ -245,11 +279,11 @@ const ApplicantTestPage = () => {
   const handleTimeUp = async () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
-    
+
     openModal(
-      'timeup',
-      '⏰ Time\'s Up',
-      'Time is up! Your answers will be submitted automatically.',
+      "timeup",
+      "⏰ Time's Up",
+      "Time is up! Your answers will be submitted automatically.",
       async () => {
         closeModal();
         await submitTest();
@@ -293,9 +327,9 @@ const ApplicantTestPage = () => {
     if (currentQuestion.question_type === "DESC") {
       if (!descriptiveAnswer.trim()) {
         openModal(
-          'validation',
-          '⚠️ Answer Required',
-          'Please provide an answer before proceeding.',
+          "validation",
+          "⚠️ Answer Required",
+          "Please provide an answer before proceeding.",
           closeModal
         );
         return;
@@ -303,9 +337,9 @@ const ApplicantTestPage = () => {
     } else if (currentQuestion.question_type === "CB") {
       if (selectedAnswers.length === 0) {
         openModal(
-          'validation',
-          '⚠️ Selection Needed',
-          'Please select at least one answer before proceeding.',
+          "validation",
+          "⚠️ Selection Needed",
+          "Please select at least one answer before proceeding.",
           closeModal
         );
         return;
@@ -313,9 +347,9 @@ const ApplicantTestPage = () => {
     } else {
       if (selectedAnswer === null) {
         openModal(
-          'validation',
-          '⚠️ Answer Required',
-          'Please select an answer before proceeding.',
+          "validation",
+          "⚠️ Answer Required",
+          "Please select an answer before proceeding.",
           closeModal
         );
         return;
@@ -333,7 +367,7 @@ const ApplicantTestPage = () => {
     }
     setUserAnswers(newUserAnswers);
 
-    localStorage.setItem('userAnswers', JSON.stringify(newUserAnswers));
+    localStorage.setItem("userAnswers", JSON.stringify(newUserAnswers));
 
     // Move to next question or submit
     if (currentQuestionIndex < questions.length - 1) {
@@ -356,9 +390,9 @@ const ApplicantTestPage = () => {
     try {
       if (!quizData || !applicantData) {
         openModal(
-          'error',
-          '⚠️ Error',
-          'Quiz or applicant data not found. Cannot submit test.',
+          "error",
+          "⚠️ Error",
+          "Quiz or applicant data not found. Cannot submit test.",
           closeModal
         );
         return;
@@ -386,10 +420,10 @@ const ApplicantTestPage = () => {
       };
 
       const resultData = await addResult(payload);
-      await addBridge({ 
-        examiner_id: applicantData.examiner_id, 
-        quiz_id: quizData.quiz_id, 
-        result_id: resultData.result_id 
+      await addBridge({
+        examiner_id: applicantData.examiner_id,
+        quiz_id: quizData.quiz_id,
+        result_id: resultData.result_id,
       });
 
       navigate("/completed-test", {
@@ -403,9 +437,10 @@ const ApplicantTestPage = () => {
     } catch (error) {
       console.error("Error submitting test:", error);
       openModal(
-        'error',
-        '⚠️ Submission Error',
-        error.response?.data?.message || 'Failed to submit test. Please try again.',
+        "error",
+        "⚠️ Submission Error",
+        error.response?.data?.message ||
+          "Failed to submit test. Please try again.",
         closeModal
       );
     }
@@ -413,9 +448,9 @@ const ApplicantTestPage = () => {
 
   const handleBackToHome = () => {
     openModal(
-      'exit',
-      '⚠️ Exit Test',
-      'Are you sure you want to exit? Your progress will be lost.',
+      "exit",
+      "⚠️ Exit Test",
+      "Are you sure you want to exit? Your progress will be lost.",
       () => {
         closeModal();
         navigate("/test-instructions");
@@ -433,24 +468,26 @@ const ApplicantTestPage = () => {
 
   const onDocumentLoadError = (error) => {
     console.error("Error loading PDF:", error);
-    setPdfError("Failed to load PDF document. You can still view it by opening the link in a new tab.");
+    setPdfError(
+      "Failed to load PDF document. You can still view it by opening the link in a new tab."
+    );
     setPdfLoading(false);
   };
 
   const goToPreviousPage = () => {
-    setPageNumber(prev => Math.max(prev - 1, 1));
+    setPageNumber((prev) => Math.max(prev - 1, 1));
   };
 
   const goToNextPage = () => {
-    setPageNumber(prev => Math.min(prev + 1, numPages));
+    setPageNumber((prev) => Math.min(prev + 1, numPages));
   };
 
   const zoomIn = () => {
-    setPdfScale(prev => Math.min(prev + 0.25, 2.0));
+    setPdfScale((prev) => Math.min(prev + 0.25, 2.0));
   };
 
   const zoomOut = () => {
-    setPdfScale(prev => Math.max(prev - 0.25, 0.5));
+    setPdfScale((prev) => Math.max(prev - 0.25, 0.5));
   };
 
   const resetZoom = () => {
@@ -466,7 +503,7 @@ const ApplicantTestPage = () => {
       const fileId = match[1];
       return `https://drive.google.com/file/d/${fileId}/preview`;
     }
-    
+
     return driveLink;
   };
 
@@ -760,7 +797,7 @@ const ApplicantTestPage = () => {
   // Render PDF Viewer for mobile
   const renderPdfViewer = () => {
     const directPdfLink = getDirectPdfLink(quizData.pdf_link);
-    
+
     if (pdfError) {
       return (
         <div className="text-center py-8 sm:py-12 bg-white rounded-lg border-2 border-dashed border-gray-300">
@@ -777,8 +814,18 @@ const ApplicantTestPage = () => {
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors text-sm"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+              />
             </svg>
             Open PDF
           </a>
@@ -831,12 +878,14 @@ const ApplicantTestPage = () => {
                 border: 'none',
                 maxWidth: '100%',
                 transform: `scale(${pdfScale})`,
-                transformOrigin: 'top center'
+                transformOrigin: "top center",
               }}
               title="PDF Document"
               onLoad={() => setPdfLoading(false)}
               onError={() => {
-                setPdfError("Failed to load PDF. Please try opening in a new tab.");
+                setPdfError(
+                  "Failed to load PDF. Please try opening in a new tab."
+                );
                 setPdfLoading(false);
               }}
             />
@@ -852,7 +901,7 @@ const ApplicantTestPage = () => {
                 </div>
               }
             >
-              <Page 
+              <Page
                 pageNumber={pageNumber}
                 scale={pdfScale}
                 loading={
