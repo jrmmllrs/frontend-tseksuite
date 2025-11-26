@@ -27,6 +27,10 @@ const ApplicantTestPage = () => {
   const [applicantData, setApplicantData] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [percentage, setPercentage] = useState(50);
+  
+  // NEW STATE: Toggle for all questions view
+  const [showAllQuestions, setShowAllQuestions] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   // PDF states
   const [numPages, setNumPages] = useState(null);
@@ -44,6 +48,18 @@ const ApplicantTestPage = () => {
     onConfirm: null,
     showCancel: false
   });
+
+  // Check mobile screen size
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Helper function to open modal
   const openModal = (type, title, message, onConfirm, showCancel = false) => {
@@ -69,13 +85,15 @@ const ApplicantTestPage = () => {
     });
   };
 
+  // Toggle between single question and all questions view
+  const toggleQuestionView = () => {
+    setShowAllQuestions(!showAllQuestions);
+  };
+
   // Initial data loading
   useEffect(() => {
     const selectedQuiz = location.state?.quizData || JSON.parse(localStorage.getItem("selectedQuiz") || "null");
     const applicant = location.state?.applicantData || JSON.parse(localStorage.getItem("applicantData") || "{}");
-
-    console.log("Selected Quiz Data:", selectedQuiz);
-    console.log("Applicant Data:", applicant);
 
     if (!selectedQuiz || !applicant.examiner_id) {
       openModal(
@@ -94,10 +112,8 @@ const ApplicantTestPage = () => {
     setApplicantData(applicant);
     setTimeRemaining(selectedQuiz.time_limit * 60);
     
-    // Always try to fetch questions, even for PDF tests
-    console.log("Fetching questions for quiz...");
     fetchQuestions(selectedQuiz.quiz_id);
-  }, [location.state?.quizData, location.state?.applicantData]);
+  }, [location.state, navigate]);
 
   // Timer countdown
   useEffect(() => {
@@ -129,7 +145,7 @@ const ApplicantTestPage = () => {
 
   // Load saved answer when question changes
   useEffect(() => {
-    if (questions.length === 0) return;
+    if (questions.length === 0 || showAllQuestions) return;
     
     const currentQuestion = questions[currentQuestionIndex];
     if (!currentQuestion) return;
@@ -143,7 +159,40 @@ const ApplicantTestPage = () => {
     } else {
       setSelectedAnswer(savedAnswer || null);
     }
-  }, [currentQuestionIndex, questions, userAnswers]);
+  }, [currentQuestionIndex, questions, userAnswers, showAllQuestions]);
+
+  // Handle answer selection for specific question (for all questions view)
+  const handleAnswerSelectForQuestion = (questionIndex, answerId) => {
+    const question = questions[questionIndex];
+    
+    if (question.question_type === "CB") {
+      const currentAnswers = userAnswers[questionIndex] || [];
+      const newAnswers = currentAnswers.includes(answerId) 
+        ? currentAnswers.filter(id => id !== answerId)
+        : [...currentAnswers, answerId];
+      
+      const newUserAnswers = [...userAnswers];
+      newUserAnswers[questionIndex] = newAnswers;
+      setUserAnswers(newUserAnswers);
+    } else {
+      const newUserAnswers = [...userAnswers];
+      newUserAnswers[questionIndex] = answerId;
+      setUserAnswers(newUserAnswers);
+    }
+  };
+
+  // Handle descriptive answer change for specific question
+  const handleDescriptiveAnswerChange = (questionIndex, value) => {
+    const newUserAnswers = [...userAnswers];
+    newUserAnswers[questionIndex] = value;
+    setUserAnswers(newUserAnswers);
+  };
+
+  // Jump to specific question from all questions view
+  const jumpToQuestion = (index) => {
+    setCurrentQuestionIndex(index);
+    setShowAllQuestions(false);
+  };
 
   const fetchQuestions = async (quizId) => {
     try {
@@ -174,7 +223,6 @@ const ApplicantTestPage = () => {
       setUserAnswers(new Array(questionsWithOptions.length).fill(null));
     } catch (error) {
       console.error("Error fetching questions:", error);
-      // For PDF tests, it's okay if there are no questions
       if (!quizData?.pdf_link) {
         openModal(
           'error',
@@ -186,7 +234,6 @@ const ApplicantTestPage = () => {
           }
         );
       } else {
-        // For PDF tests, set empty questions and proceed
         setQuestions([]);
         setUserAnswers([]);
       }
@@ -235,7 +282,6 @@ const ApplicantTestPage = () => {
   const handleNext = () => {
     if (isSubmitting) return;
 
-    // For PDF tests with no questions, submit immediately
     if (quizData?.pdf_link && questions.length === 0) {
       submitTest();
       return;
@@ -300,6 +346,12 @@ const ApplicantTestPage = () => {
     }
   };
 
+  const handlePrevious = () => {
+    if (currentQuestionIndex > 0) {
+      setCurrentQuestionIndex(currentQuestionIndex - 1);
+    }
+  };
+
   const submitTest = async (answers = userAnswers) => {
     try {
       if (!quizData || !applicantData) {
@@ -312,18 +364,15 @@ const ApplicantTestPage = () => {
         return;
       }
 
-      // For PDF tests with no questions, submit with special handling
       let formattedAnswers = [];
       let answeredCount = 0;
       let status = "COMPLETED";
 
       if (quizData.pdf_link && questions.length === 0) {
-        // PDF test with no questions - treat as completed with no answers
         formattedAnswers = [];
         answeredCount = 0;
         status = "COMPLETED";
       } else {
-        // Regular quiz or PDF test with questions
         formattedAnswers = formatAnswers(questions, answers);
         answeredCount = countAnswer(formattedAnswers);
         status = answeredCount < questions.length ? "ABANDONED" : "COMPLETED";
@@ -335,8 +384,6 @@ const ApplicantTestPage = () => {
         answers: formattedAnswers,
         status: status,
       };
-
-      console.log("Submitting test with payload:", payload);
 
       const resultData = await addResult(payload);
       await addBridge({ 
@@ -382,7 +429,6 @@ const ApplicantTestPage = () => {
     setNumPages(numPages);
     setPdfLoading(false);
     setPdfError(null);
-    console.log("PDF loaded successfully, pages:", numPages);
   };
 
   const onDocumentLoadError = (error) => {
@@ -415,44 +461,326 @@ const ApplicantTestPage = () => {
   const getDirectPdfLink = (driveLink) => {
     if (!driveLink) return null;
     
-    console.log("Original PDF Link:", driveLink);
-    
-    // Extract file ID from Google Drive link
     const match = driveLink.match(/\/d\/([^\/]+)/);
     if (match) {
       const fileId = match[1];
-      const embedLink = `https://drive.google.com/file/d/${fileId}/preview`;
-      console.log("Converted PDF Link:", embedLink);
-      return embedLink;
+      return `https://drive.google.com/file/d/${fileId}/preview`;
     }
     
     return driveLink;
   };
 
-  // Render PDF Viewer
+  // Render single question view
+  const renderSingleQuestion = () => {
+    const currentQuestion = questions[currentQuestionIndex];
+    
+    return (
+      <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-4 sm:p-6 flex flex-col overflow-y-auto">
+        {/* Progress Bar */}
+        <div className="mb-4 sm:mb-6">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs sm:text-sm font-semibold text-gray-600">Progress</span>
+            <span className="text-xs sm:text-sm font-bold text-cyan-600">
+              Q{currentQuestionIndex + 1} / {questions.length}
+            </span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div 
+              className="bg-gradient-to-r from-cyan-500 to-blue-500 h-2 rounded-full transition-all duration-300"
+              style={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }}
+            ></div>
+          </div>
+        </div>
+
+        {/* Question Type Badge */}
+        <div className="mb-3 sm:mb-4">
+          <span className="inline-block px-2 py-1 sm:px-3 sm:py-1.5 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold uppercase tracking-wide">
+            {getQuestionTypeLabel(currentQuestion.question_type)}
+          </span>
+        </div>
+
+        {/* Question Text */}
+        <div className="mb-4 sm:mb-6">
+          <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 leading-tight">
+            {currentQuestion.question_text}
+          </h2>
+        </div>
+
+        {/* Answer Options */}
+        <div className="flex-1 mb-4 sm:mb-6">
+          {currentQuestion.question_type === "DESC" ? (
+            <div>
+              <textarea
+                value={descriptiveAnswer}
+                onChange={(e) => setDescriptiveAnswer(e.target.value)}
+                placeholder="Type your answer here..."
+                className="w-full p-3 sm:p-4 rounded-xl text-sm sm:text-base border-2 border-gray-300 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 focus:outline-none resize-none transition-all"
+                rows={isMobile ? 8 : 12}
+                style={{ minHeight: isMobile ? '200px' : '300px' }}
+              />
+              <div className="flex items-center justify-between mt-2">
+                <p className="text-xs sm:text-sm text-gray-500">Characters: {descriptiveAnswer.length}</p>
+                <p className="text-xs text-gray-400 hidden sm:block">Press Tab to format</p>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2 sm:space-y-3">
+              {currentQuestion.options.map((option) => {
+                const isSelected = currentQuestion.question_type === "CB" 
+                  ? selectedAnswers.includes(option.answer_id)
+                  : selectedAnswer === option.answer_id;
+                
+                return (
+                  <button
+                    key={option.answer_id}
+                    onClick={() => handleAnswerSelect(option.answer_id)}
+                    className={`w-full p-3 sm:p-4 rounded-xl text-left text-sm sm:text-base transition-all duration-200 border-2 ${
+                      isSelected 
+                        ? "bg-gradient-to-r from-cyan-50 to-blue-50 border-cyan-500 shadow-md sm:transform sm:scale-[1.02]" 
+                        : "bg-gray-50 hover:bg-gray-100 border-gray-300 hover:border-gray-400 hover:shadow-sm"
+                    }`}
+                  >
+                    <div className="flex items-start gap-2 sm:gap-3">
+                      {currentQuestion.question_type === "CB" ? (
+                        <div className={`w-5 h-5 sm:w-6 sm:h-6 shrink-0 mt-0.5 rounded border-2 flex items-center justify-center transition-all ${
+                          isSelected ? "bg-cyan-600 border-cyan-600" : "border-gray-400"
+                        }`}>
+                          {isSelected && (
+                            <svg className="w-3 h-3 sm:w-4 sm:h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                        </div>
+                      ) : (
+                        <div className={`w-5 h-5 sm:w-6 sm:h-6 shrink-0 mt-0.5 rounded-full border-2 flex items-center justify-center transition-all ${
+                          isSelected ? "border-cyan-600 bg-cyan-600" : "border-gray-400"
+                        }`}>
+                          {isSelected && (
+                            <div className="w-2 h-2 sm:w-3 sm:h-3 bg-white rounded-full"></div>
+                          )}
+                        </div>
+                      )}
+                      <span className={`leading-relaxed ${isSelected ? 'font-medium text-gray-900' : 'text-gray-700'}`}>
+                        {option.option_text}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Navigation and Action Buttons */}
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-0">
+          <div className="flex gap-2 w-full sm:w-auto">
+            <button
+              onClick={toggleQuestionView}
+              className="flex-1 sm:flex-none px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 text-xs sm:text-sm font-medium"
+            >
+              <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+              All Questions
+            </button>
+            
+            {currentQuestionIndex > 0 && (
+              <button
+                onClick={handlePrevious}
+                className="flex-1 sm:flex-none px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 text-xs sm:text-sm font-medium"
+              >
+                <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+                Previous
+              </button>
+            )}
+          </div>
+          
+          <button
+            onClick={handleNext}
+            disabled={isSubmitting}
+            className={`w-full sm:w-auto bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 px-4 sm:px-8 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 text-base sm:text-lg shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed ${
+              isSubmitting ? "cursor-not-allowed" : ""
+            }`}
+          >
+            {isSubmitting ? (
+              <>
+                <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <span className="text-sm sm:text-base">Submitting...</span>
+              </>
+            ) : (
+              <>
+                <span className="text-sm sm:text-base">
+                  {currentQuestionIndex < questions.length - 1 ? "Next" : "Submit"}
+                </span>
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  // Render all questions view
+  const renderAllQuestions = () => {
+    return (
+      <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-4 sm:p-6 flex flex-col overflow-y-auto">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0 mb-4 sm:mb-6">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">All Questions</h2>
+          <button
+            onClick={toggleQuestionView}
+            className="w-full sm:w-auto px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 text-sm font-medium"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Back to Single View
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 sm:gap-6 max-h-[60vh] sm:max-h-[600px] overflow-y-auto">
+          {questions.map((question, index) => (
+            <div key={question.question_id} className="border border-gray-200 rounded-lg p-3 sm:p-4 hover:border-cyan-300 transition-colors">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 sm:gap-0 mb-3">
+                <div className="flex items-center gap-2">
+                  <span className="inline-block px-2 py-1 bg-cyan-100 text-cyan-700 rounded text-xs font-semibold">
+                    Q{index + 1}
+                  </span>
+                  <span className="inline-block px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-semibold">
+                    {getQuestionTypeLabel(question.question_type)}
+                  </span>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => jumpToQuestion(index)}
+                    className="px-3 py-1 bg-cyan-600 hover:bg-cyan-700 text-white rounded text-xs font-medium transition-colors"
+                  >
+                    Go to Question
+                  </button>
+                </div>
+              </div>
+
+              <h3 className="font-semibold text-gray-900 text-sm sm:text-base mb-3 line-clamp-2">
+                {question.question_text}
+              </h3>
+
+              {question.question_type === "DESC" ? (
+                <textarea
+                  value={userAnswers[index] || ""}
+                  onChange={(e) => handleDescriptiveAnswerChange(index, e.target.value)}
+                  placeholder="Type your answer here..."
+                  className="w-full p-3 rounded-lg border border-gray-300 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-200 focus:outline-none resize-none text-sm"
+                  rows={3}
+                />
+              ) : (
+                <div className="space-y-2">
+                  {question.options.map((option) => {
+                    const isSelected = question.question_type === "CB" 
+                      ? (userAnswers[index] || []).includes(option.answer_id)
+                      : userAnswers[index] === option.answer_id;
+                    
+                    return (
+                      <div
+                        key={option.answer_id}
+                        className={`p-2 sm:p-3 rounded-lg border cursor-pointer transition-colors ${
+                          isSelected 
+                            ? "bg-cyan-50 border-cyan-500" 
+                            : "bg-gray-50 border-gray-300 hover:border-gray-400"
+                        }`}
+                        onClick={() => handleAnswerSelectForQuestion(index, option.answer_id)}
+                      >
+                        <div className="flex items-start gap-2">
+                          {question.question_type === "CB" ? (
+                            <div className={`w-4 h-4 mt-0.5 rounded border flex items-center justify-center ${
+                              isSelected ? "bg-cyan-600 border-cyan-600" : "border-gray-400"
+                            }`}>
+                              {isSelected && (
+                                <svg className="w-2 h-2 sm:w-3 sm:h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                </svg>
+                              )}
+                            </div>
+                          ) : (
+                            <div className={`w-4 h-4 mt-0.5 rounded-full border flex items-center justify-center ${
+                              isSelected ? "border-cyan-600" : "border-gray-400"
+                            }`}>
+                              {isSelected && <div className="w-2 h-2 bg-cyan-600 rounded-full"></div>}
+                            </div>
+                          )}
+                          <span className="text-xs sm:text-sm text-gray-700 line-clamp-2">{option.option_text}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              <div className="mt-2 text-xs text-gray-500">
+                {userAnswers[index] ? (
+                  <span className="text-green-600">✓ Answered</span>
+                ) : (
+                  <span className="text-red-500">✗ Not answered</span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-4 sm:mt-6 flex justify-end">
+          <button
+            onClick={() => submitTest()}
+            disabled={isSubmitting}
+            className={`w-full sm:w-auto bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 px-6 sm:px-8 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 text-base sm:text-lg shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed ${
+              isSubmitting ? "cursor-not-allowed" : ""
+            }`}
+          >
+            {isSubmitting ? (
+              <>
+                <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <span className="text-sm sm:text-base">Submitting...</span>
+              </>
+            ) : (
+              <>
+                <span className="text-sm sm:text-base">Submit Quiz</span>
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  // Render PDF Viewer for mobile
   const renderPdfViewer = () => {
     const directPdfLink = getDirectPdfLink(quizData.pdf_link);
     
     if (pdfError) {
       return (
-        <div className="text-center py-12 bg-white rounded-lg border-2 border-dashed border-gray-300">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="text-center py-8 sm:py-12 bg-white rounded-lg border-2 border-dashed border-gray-300">
+          <div className="w-12 h-12 sm:w-16 sm:h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+            <svg className="w-6 h-6 sm:w-8 sm:h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </div>
-          <p className="text-red-600 font-medium mb-2">Failed to load PDF</p>
-          <p className="text-gray-600 text-sm mb-4">{pdfError}</p>
+          <p className="text-red-600 font-medium text-sm sm:text-base mb-2">Failed to load PDF</p>
+          <p className="text-gray-600 text-xs sm:text-sm mb-4 px-2">{pdfError}</p>
           <a 
             href={directPdfLink} 
             target="_blank" 
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors text-sm"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
             </svg>
-            Open PDF in New Tab
+            Open PDF
           </a>
         </div>
       );
@@ -460,57 +788,48 @@ const ApplicantTestPage = () => {
 
     return (
       <div className="bg-white rounded-lg border-2 border-gray-200 overflow-hidden">
-        <div className="flex items-center justify-between p-4 bg-gray-50 border-b">
+        <div className="flex items-center justify-between p-3 sm:p-4 bg-gray-50 border-b">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-700">
-              {pdfLoading ? "Loading PDF..." : `Page ${pageNumber} of ${numPages || '?'}`}
+            <span className="text-xs sm:text-sm font-medium text-gray-700">
+              {pdfLoading ? "Loading..." : `Page ${pageNumber} of ${numPages || '?'}`}
             </span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
             <button
               onClick={zoomOut}
               disabled={pdfScale <= 0.5}
-              className="p-2 text-gray-600 hover:text-gray-800 disabled:opacity-50"
+              className="p-1 sm:p-2 text-gray-600 hover:text-gray-800 disabled:opacity-50"
               title="Zoom Out"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
               </svg>
             </button>
-            <span className="text-sm text-gray-600 min-w-12 text-center">
+            <span className="text-xs sm:text-sm text-gray-600 min-w-8 sm:min-w-12 text-center">
               {Math.round(pdfScale * 100)}%
             </span>
             <button
               onClick={zoomIn}
               disabled={pdfScale >= 2.0}
-              className="p-2 text-gray-600 hover:text-gray-800 disabled:opacity-50"
+              className="p-1 sm:p-2 text-gray-600 hover:text-gray-800 disabled:opacity-50"
               title="Zoom In"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-            </button>
-            <button
-              onClick={resetZoom}
-              className="p-2 text-gray-600 hover:text-gray-800"
-              title="Reset Zoom"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
             </button>
           </div>
         </div>
 
-        <div className="flex justify-center bg-gray-100 p-4 min-h-[600px]">
+        <div className="flex justify-center bg-gray-100 p-2 sm:p-4 min-h-[300px] sm:min-h-[600px]">
           {directPdfLink && directPdfLink.includes('drive.google.com') ? (
             <iframe
               src={directPdfLink}
               width="100%"
-              height="600"
+              height={isMobile ? "400" : "600"}
               style={{ 
                 border: 'none',
-                maxWidth: '800px',
+                maxWidth: '100%',
                 transform: `scale(${pdfScale})`,
                 transformOrigin: 'top center'
               }}
@@ -527,9 +846,9 @@ const ApplicantTestPage = () => {
               onLoadSuccess={onDocumentLoadSuccess}
               onLoadError={onDocumentLoadError}
               loading={
-                <div className="flex items-center justify-center py-12">
-                  <div className="w-8 h-8 border-4 border-cyan-200 border-t-cyan-600 rounded-full animate-spin"></div>
-                  <span className="ml-3 text-gray-600">Loading PDF document...</span>
+                <div className="flex items-center justify-center py-8 sm:py-12">
+                  <div className="w-6 h-6 sm:w-8 sm:h-8 border-4 border-cyan-200 border-t-cyan-600 rounded-full animate-spin"></div>
+                  <span className="ml-2 sm:ml-3 text-gray-600 text-sm">Loading PDF...</span>
                 </div>
               }
             >
@@ -537,8 +856,8 @@ const ApplicantTestPage = () => {
                 pageNumber={pageNumber}
                 scale={pdfScale}
                 loading={
-                  <div className="flex items-center justify-center py-12">
-                    <div className="w-8 h-8 border-4 border-cyan-200 border-t-cyan-600 rounded-full animate-spin"></div>
+                  <div className="flex items-center justify-center py-8 sm:py-12">
+                    <div className="w-6 h-6 sm:w-8 sm:h-8 border-4 border-cyan-200 border-t-cyan-600 rounded-full animate-spin"></div>
                   </div>
                 }
               />
@@ -547,27 +866,27 @@ const ApplicantTestPage = () => {
         </div>
 
         {numPages > 1 && directPdfLink && !directPdfLink.includes('drive.google.com') && (
-          <div className="flex items-center justify-center gap-4 p-4 bg-gray-50 border-t">
+          <div className="flex items-center justify-center gap-2 sm:gap-4 p-3 sm:p-4 bg-gray-50 border-t">
             <button
               onClick={goToPreviousPage}
               disabled={pageNumber <= 1}
-              className="flex items-center gap-2 px-4 py-2 bg-white text-gray-700 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="flex items-center gap-1 sm:gap-2 px-3 py-2 bg-white text-gray-700 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs sm:text-sm"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
-              Previous
+              Prev
             </button>
-            <span className="text-sm text-gray-600">
-              Page {pageNumber} of {numPages}
+            <span className="text-xs sm:text-sm text-gray-600 px-2">
+              {pageNumber} / {numPages}
             </span>
             <button
               onClick={goToNextPage}
               disabled={pageNumber >= numPages}
-              className="flex items-center gap-2 px-4 py-2 bg-white text-gray-700 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="flex items-center gap-1 sm:gap-2 px-3 py-2 bg-white text-gray-700 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs sm:text-sm"
             >
               Next
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </button>
@@ -581,8 +900,8 @@ const ApplicantTestPage = () => {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-cyan-200 border-t-cyan-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading {quizData?.pdf_link ? 'PDF test' : 'questions'}...</p>
+          <div className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-cyan-200 border-t-cyan-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 text-sm sm:text-base">Loading {quizData?.pdf_link ? 'PDF test' : 'questions'}...</p>
         </div>
       </div>
     );
@@ -598,37 +917,37 @@ const ApplicantTestPage = () => {
       <div className="min-h-screen bg-white flex flex-col" style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}>
         <div className="sticky top-0 h-1.5 bg-[#2E99B0] transition-all duration-300 ease-out z-50" style={{ width: `100%` }} />
           
-        <div className="px-6 sm:px-12 lg:px-24 xl:px-32 pt-8 pb-6">
-          <div className="flex items-center justify-between max-w-7xl mx-auto">
+        <div className="px-4 sm:px-6 lg:px-12 xl:px-24 pt-6 pb-4">
+          <div className="flex items-center justify-between">
             <button onClick={handleBackToHome} className="flex items-center gap-2 text-gray-900 hover:text-gray-600 transition-colors">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
-              <span className="font-normal text-base">Exit Test</span>
+              <span className="font-normal text-sm sm:text-base">Exit Test</span>
             </button>
 
-            <div className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-black rounded-lg transition-colors duration-200" style={{ boxShadow: "2px 2px 0px 0px rgba(0, 0, 0, 1)" }}>
-              <img src={ClockIcon} className="w-5 h-5" alt="clock" />
-              <span className="font-semibold text-gray-900 text-lg">{formatTime(timeRemaining)}</span>
+            <div className="flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 bg-white border-2 border-black rounded-lg transition-colors duration-200" style={{ boxShadow: "2px 2px 0px 0px rgba(0, 0, 0, 1)" }}>
+              <img src={ClockIcon} className="w-4 h-4 sm:w-5 sm:h-5" alt="clock" />
+              <span className="font-semibold text-gray-900 text-base sm:text-lg">{formatTime(timeRemaining)}</span>
             </div>
           </div>
         </div>
 
-        <div className="flex-1 px-6 sm:px-12 lg:px-24 xl:px-32 pb-12">
-          <div className="max-w-[1800px] mx-auto">
-            <div className="mb-6">
-              <Stack spacing={3}>
-                <Typography sx={{ color: '#1a1a1a', fontSize: { xs: 20, sm: 24, md: 28, lg: 32 }, fontWeight: 'bold', lineHeight: 1.3 }}>
+        <div className="flex-1 px-4 sm:px-6 lg:px-12 xl:px-24 pb-8">
+          <div className="max-w-full mx-auto">
+            <div className="mb-4 sm:mb-6">
+              <Stack spacing={2}>
+                <Typography sx={{ color: '#1a1a1a', fontSize: { xs: 18, sm: 20, md: 24, lg: 28 }, fontWeight: 'bold', lineHeight: 1.3 }}>
                   PDF Test: {quizData.quiz_name}
                 </Typography>
-                <Typography sx={{ color: '#4a5568', fontSize: { xs: 16, sm: 18 }, lineHeight: 1.5 }}>
+                <Typography sx={{ color: '#4a5568', fontSize: { xs: 14, sm: 16 }, lineHeight: 1.5 }}>
                   Please review the PDF document below. When you're ready, click the submit button to complete the test.
                 </Typography>
               </Stack>
             </div>
 
             {/* PDF Viewer */}
-            <div className="mb-8">
+            <div className="mb-6">
               {renderPdfViewer()}
             </div>
 
@@ -637,20 +956,20 @@ const ApplicantTestPage = () => {
               <button
                 onClick={handleNext}
                 disabled={isSubmitting}
-                className={`bg-cyan-600 hover:bg-cyan-700 text-white font-semibold px-12 py-3.5 rounded-lg transition-colors duration-200 flex items-center gap-2 text-base ${
+                className={`w-full sm:w-auto bg-cyan-600 hover:bg-cyan-700 text-white font-semibold px-6 sm:px-12 py-3 sm:py-3.5 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 text-sm sm:text-base ${
                   isSubmitting ? "opacity-50 cursor-not-allowed" : ""
                 }`}
                 style={{ boxShadow: "4px 4px 0px 0px rgba(0, 0, 0, 1)" }}
               >
                 {isSubmitting ? (
                   <>
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                     Submitting...
                   </>
                 ) : (
                   <>
                     Submit Test
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                     </svg>
                   </>
@@ -662,21 +981,32 @@ const ApplicantTestPage = () => {
 
         <Footer />
 
-        <Dialog open={modalState.open} onClose={closeModal} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: '12px', padding: '8px' } }}>
-          <DialogTitle sx={{ fontSize: '20px', fontWeight: 'bold', color: '#1a1a1a', pb: 1 }}>{modalState.title}</DialogTitle>
+        <Dialog open={modalState.open} onClose={closeModal} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: '12px', padding: '8px', m: 2 } }}>
+          <DialogTitle sx={{ fontSize: '18px', fontWeight: 'bold', color: '#1a1a1a', pb: 1 }}>{modalState.title}</DialogTitle>
           <DialogContent>
-            <Typography sx={{ fontSize: '16px', color: '#4a5568', lineHeight: 1.6 }}>{modalState.message}</Typography>
+            <Typography sx={{ fontSize: '14px', color: '#4a5568', lineHeight: 1.6 }}>{modalState.message}</Typography>
           </DialogContent>
-          <DialogActions sx={{ padding: '16px 24px' }}>
+          <DialogActions sx={{ padding: '12px 16px', flexDirection: isMobile ? 'column' : 'row', gap: 1 }}>
             {modalState.showCancel && (
-              <Button onClick={closeModal} sx={{ color: '#6b7280', textTransform: 'none', fontSize: '15px', fontWeight: 500, '&:hover': { backgroundColor: '#f3f4f6' } }}>
+              <Button onClick={closeModal} sx={{ 
+                color: '#6b7280', 
+                textTransform: 'none', 
+                fontSize: '14px', 
+                fontWeight: 500, 
+                '&:hover': { backgroundColor: '#f3f4f6' },
+                width: isMobile ? '100%' : 'auto'
+              }}>
                 Cancel 
               </Button>
             )}
             <Button onClick={modalState.onConfirm} variant="contained" sx={{ 
                 bgcolor: modalState.type === 'exit' ? '#dc2626' : '#2E99B0',
                 '&:hover': { bgcolor: modalState.type === 'exit' ? '#b91c1c' : '#267a8d' },
-                textTransform: 'none', fontSize: '15px', fontWeight: 600, boxShadow: '2px 2px 0px 0px rgba(0, 0, 0, 0.1)'
+                textTransform: 'none', 
+                fontSize: '14px', 
+                fontWeight: 600, 
+                boxShadow: '2px 2px 0px 0px rgba(0, 0, 0, 0.1)',
+                width: isMobile ? '100%' : 'auto'
               }}>
               {modalState.type === 'exit' ? 'Exit Test' : 'OK'}
             </Button>
@@ -689,11 +1019,11 @@ const ApplicantTestPage = () => {
   // Regular Quiz Layout with questions
   if (!hasQuestions) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center p-4">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">No Questions Available</h2>
-          <p className="text-gray-600 mb-6">This quiz doesn't have any questions yet.</p>
-          <button onClick={() => navigate("/quiz-selection")} className="px-6 py-3 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4">No Questions Available</h2>
+          <p className="text-gray-600 mb-6 text-sm sm:text-base">This quiz doesn't have any questions yet.</p>
+          <button onClick={() => navigate("/quiz-selection")} className="px-6 py-3 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 text-sm sm:text-base">
             Back to Quiz Selection
           </button>
         </div>
@@ -703,409 +1033,241 @@ const ApplicantTestPage = () => {
 
   const currentQuestion = questions[currentQuestionIndex];
 
-  const breadcrumbs = [
-    <Typography underline="hover" key="1" color="inherit" sx={{ fontSize: { xs: 14, sm: 16, md: 18 } }}>
-      {getQuestionTypeLabel(currentQuestion.question_type)}
-    </Typography>,
-    <Typography key="2" sx={{ color: '#2E99B0', fontSize: { xs: 14, sm: 16, md: 18 } }}>
-      Question {currentQuestionIndex + 1} / {questions.length}
-    </Typography>
-  ];
-
   return (
     <div className="min-h-screen bg-white flex flex-col" style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}>
       <div className="sticky top-0 h-1.5 bg-[#2E99B0] transition-all duration-300 ease-out z-50" style={{ width: `${percentage}%` }} />
         
-      <div className="px-6 sm:px-12 lg:px-24 xl:px-32 pt-8 pb-6">
-        <div className="flex items-center justify-between max-w-7xl mx-auto">
+      <div className="px-4 sm:px-6 lg:px-12 xl:px-24 pt-6 pb-4">
+        <div className="flex items-center justify-between">
           <button onClick={handleBackToHome} className="flex items-center gap-2 text-gray-900 hover:text-gray-600 transition-colors">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
-            <span className="font-normal text-base">Exit Test</span>
+            <span className="font-normal text-sm sm:text-base">Exit Test</span>
           </button>
 
-          <div className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-black rounded-lg transition-colors duration-200" style={{ boxShadow: "2px 2px 0px 0px rgba(0, 0, 0, 1)" }}>
-            <img src={ClockIcon} className="w-5 h-5" alt="clock" />
-            <span className="font-semibold text-gray-900 text-lg">{formatTime(timeRemaining)}</span>
+          <div className="flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 bg-white border-2 border-black rounded-lg transition-colors duration-200" style={{ boxShadow: "2px 2px 0px 0px rgba(0, 0, 0, 1)" }}>
+            <img src={ClockIcon} className="w-4 h-4 sm:w-5 sm:h-5" alt="clock" />
+            <span className="font-semibold text-gray-900 text-base sm:text-lg">{formatTime(timeRemaining)}</span>
           </div>
         </div>
       </div>
 
-      <div className="flex-1 px-6 sm:px-12 lg:px-24 xl:px-32 pb-12">
-   <div className="min-h-screen py-4">
-      <div className="max-w-[15000px] mx-auto px-4 lg:px-6">
-        {/* Split Screen Layout - PDF on left, Questions on right */}
-        {hasPdfReference ? (
-          <div className="grid grid-cols-1 lg:grid-cols-[60%_40%] gap-6 min-h-[calc(100vh-20rem)]">
-            {/* LEFT SIDE - ENHANCED PDF VIEWER */}
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-200 flex flex-col overflow-hidden">
-              {/* PDF Header */}
-              <div className="px-6 py-4 bg-cyan-600 text-white">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-lg">Reference Document</h3>
-                      <p className="text-sm text-blue-100">{quizData.title || 'Study Material'}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              {/* PDF Viewer Area - Much Larger */}
-              <div className="flex-1 overflow-auto bg-gray-800 p-6">
-                {pdfError ? (
-                  <div className="flex items-center justify-center h-full">
-                    <div className="text-center py-12 bg-white rounded-lg p-8">
-                      <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
+      <div className="flex-1 px-4 sm:px-6 lg:px-12 xl:px-24 pb-8">
+        <div className="min-h-screen py-4">
+          <div className="max-w-[1200px] mx-auto">
+            {/* Split Screen Layout - PDF on left, Questions on right */}
+            {hasPdfReference ? (
+              <div className={`flex flex-col ${isMobile ? 'space-y-4' : 'lg:grid lg:grid-cols-[60%_40%] lg:gap-6'} min-h-[calc(100vh-10rem)]`}>
+                {/* LEFT SIDE - PDF VIEWER */}
+                <div className="bg-white rounded-2xl shadow-xl border border-gray-200 flex flex-col overflow-hidden">
+                  {/* PDF Header */}
+                  <div className="px-4 sm:px-6 py-3 sm:py-4 bg-cyan-600 text-white">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 rounded-lg flex items-center justify-center">
+                          <svg className="w-4 h-4 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-base sm:text-lg">Reference Document</h3>
+                          <p className="text-xs sm:text-sm text-blue-100">{quizData.title || 'Study Material'}</p>
+                        </div>
                       </div>
-                      <p className="text-red-600 text-lg font-semibold mb-2">Failed to load PDF</p>
-                      <p className="text-gray-600 text-sm">{pdfError}</p>
                     </div>
                   </div>
-                ) : (
-                  <div className="flex justify-center">
-                    {getDirectPdfLink(quizData.pdf_link) && getDirectPdfLink(quizData.pdf_link).includes('drive.google.com') ? (
-                      <div className="bg-white rounded-lg shadow-2xl w-full" style={{ maxWidth: '900px' }}>
-                        <iframe
-                          src={getDirectPdfLink(quizData.pdf_link)}
-                          width="100%"
-                          style={{ 
-                            border: 'none',
-                            minHeight: '800px',
-                            height: '100%',
-                            borderRadius: '8px'
-                          }}
-                          title="PDF Document"
-                          onLoad={() => setPdfLoading(false)}
-                          onError={() => {
-                            setPdfError("Failed to load PDF.");
-                            setPdfLoading(false);
-                          }}
-                        />
-                      </div>
-                    ) : (
-                      <div className="bg-white rounded-lg shadow-2xl">
-                        <Document
-                          file={getDirectPdfLink(quizData.pdf_link)}
-                          onLoadSuccess={onDocumentLoadSuccess}
-                          onLoadError={onDocumentLoadError}
-                          loading={
-                            <div className="flex items-center justify-center py-20">
-                              <div className="text-center">
-                                <div className="w-12 h-12 border-4 border-cyan-200 border-t-cyan-600 rounded-full animate-spin mx-auto mb-4"></div>
-                                <span className="text-white text-sm font-medium">Loading PDF...</span>
-                              </div>
-                            </div>
-                          }
-                        >
-                          <Page pageNumber={pageNumber} scale={pdfScale} />
-                        </Document>
-                      </div>
-                    )}
+                  
+                  {/* PDF Viewer Area */}
+                  <div className="flex-1 overflow-auto bg-gray-800 p-3 sm:p-6">
+                    {renderPdfViewer()}
                   </div>
-                )}
-              </div>
-
-              {/* PDF Navigation Footer */}
-              {numPages > 1 && getDirectPdfLink(quizData.pdf_link) && !getDirectPdfLink(quizData.pdf_link).includes('drive.google.com') && (
-                <div className="px-6 py-4 bg-gray-50 border-t flex items-center justify-center gap-4">
-                  <button 
-                    onClick={goToPreviousPage}
-                    disabled={pageNumber <= 1}
-                    className="px-4 py-2 bg-gradient-to-r from-gray-200 to-gray-300 hover:from-gray-300 hover:to-gray-400 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-medium text-sm flex items-center gap-2 transition-all text-gray-700"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                    </svg>
-                    Previous
-                  </button>
-                  <span className="text-sm font-semibold text-gray-700 bg-gray-100 px-4 py-2 rounded-lg">
-                    Page {pageNumber} of {numPages}
-                  </span>
-                  <button 
-                    onClick={goToNextPage}
-                    disabled={pageNumber >= numPages}
-                    className="px-4 py-2 bg-gradient-to-r from-gray-200 to-gray-300 hover:from-gray-300 hover:to-gray-400 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-medium text-sm flex items-center gap-2 transition-all text-gray-700"
-                  >
-                    Next
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </button>
                 </div>
-              )}
-            </div>
 
-            {/* RIGHT SIDE - QUESTIONS */}
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 flex flex-col overflow-y-auto">
-              {/* Progress Bar */}
-              <div className="mb-6">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-semibold text-gray-600">Progress</span>
-                  <span className="text-sm font-bold text-cyan-600">
-                    Question {currentQuestionIndex + 1} / {questions.length}
-                  </span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2.5">
-                  <div 
-                    className="bg-gradient-to-r from-cyan-500 to-blue-500 h-2.5 rounded-full transition-all duration-300"
-                    style={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }}
-                  ></div>
+                {/* RIGHT SIDE - QUESTIONS */}
+                <div className={isMobile ? "" : "lg:h-full"}>
+                  {showAllQuestions ? renderAllQuestions() : renderSingleQuestion()}
                 </div>
               </div>
-
-              {/* Question Type Badge */}
-              <div className="mb-4">
-                <span className="inline-block px-3 py-1.5 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold uppercase tracking-wide">
-                  {getQuestionTypeLabel(currentQuestion.question_type)}
-                </span>
-              </div>
-
-              {/* Question Text */}
-              <div className="mb-6">
-                <h2 className="text-xl lg:text-2xl font-bold text-gray-900 leading-tight">
-                  {currentQuestion.question_text}
-                </h2>
-              </div>
-
-              {/* Answer Options */}
-              <div className="flex-1 mb-6">
-                {currentQuestion.question_type === "DESC" ? (
-                  <div>
-                    <textarea
-                      value={descriptiveAnswer}
-                      onChange={(e) => setDescriptiveAnswer(e.target.value)}
-                      placeholder="Type your answer here..."
-                      className="w-full p-4 rounded-xl text-base border-2 border-gray-300 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 focus:outline-none resize-none transition-all"
-                      rows={12}
-                      style={{ minHeight: '300px' }}
-                    />
-                    <div className="flex items-center justify-between mt-2">
-                      <p className="text-sm text-gray-500">Characters: {descriptiveAnswer.length}</p>
-                      <p className="text-xs text-gray-400">Press Tab to format</p>
+            ) : (
+              // NO PDF - Regular single column layout
+              <div className="max-w-4xl mx-auto">
+                {showAllQuestions ? renderAllQuestions() : (
+                  <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-4 sm:p-6 lg:p-8">
+                    {/* Progress Bar */}
+                    <div className="mb-6">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs sm:text-sm font-semibold text-gray-600">Progress</span>
+                        <span className="text-xs sm:text-sm font-bold text-cyan-600">
+                          Q{currentQuestionIndex + 1} / {questions.length}
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="bg-cyan-600 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }}
+                        ></div>
+                      </div>
                     </div>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {currentQuestion.options.map((option) => {
-                      const isSelected = currentQuestion.question_type === "CB" 
-                        ? selectedAnswers.includes(option.answer_id)
-                        : selectedAnswer === option.answer_id;
-                      
-                      return (
+
+                    <div className="mb-6">
+                      <Stack spacing={2}>
+                        <Breadcrumbs separator="›" sx={{ mb: 1 }}>
+                          <Typography sx={{ fontSize: { xs: 11, sm: 12, md: 14 } }}>
+                            {getQuestionTypeLabel(currentQuestion.question_type)}
+                          </Typography>
+                          <Typography sx={{ color: '#2E99B0', fontSize: { xs: 11, sm: 12, md: 14 } }}>
+                            Question {currentQuestionIndex + 1} / {questions.length}
+                          </Typography>
+                        </Breadcrumbs>
+                        <Typography sx={{ color: '#1a1a1a', fontSize: { xs: 18, sm: 20, md: 24, lg: 28 }, fontWeight: 'bold', lineHeight: 1.3 }}>
+                          {currentQuestion.question_text}
+                        </Typography>
+                      </Stack>
+                    </div>
+
+                    <div className="mb-6">
+                      {currentQuestion.question_type === "DESC" ? (
+                        <div>
+                          <textarea
+                            value={descriptiveAnswer}
+                            onChange={(e) => setDescriptiveAnswer(e.target.value)}
+                            placeholder="Type your answer here..."
+                            className="w-full p-4 rounded-xl text-sm sm:text-base font-normal border-2 border-gray-300 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 focus:outline-none resize-none"
+                            rows={isMobile ? 8 : 10}
+                            style={{ minHeight: isMobile ? '200px' : '250px' }}
+                          />
+                          <p className="text-xs sm:text-sm text-gray-500 mt-2">Characters: {descriptiveAnswer.length}</p>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {currentQuestion.options.map((option) => {
+                            const isSelected = currentQuestion.question_type === "CB" 
+                              ? selectedAnswers.includes(option.answer_id)
+                              : selectedAnswer === option.answer_id;
+                            
+                            return (
+                              <button
+                                key={option.answer_id}
+                                onClick={() => handleAnswerSelect(option.answer_id)}
+                                className={`p-4 rounded-xl text-left text-sm sm:text-base font-normal transition-all duration-200 border-2 ${
+                                  isSelected 
+                                    ? "bg-gradient-to-r from-cyan-50 to-blue-50 border-cyan-500 shadow-md" 
+                                    : "bg-gray-50 hover:bg-gray-100 border-gray-300 hover:border-gray-400"
+                                }`}
+                              >
+                                <div className="flex items-start gap-2 sm:gap-3">
+                                  {currentQuestion.question_type === "CB" ? (
+                                    <div className={`w-4 h-4 sm:w-5 sm:h-5 shrink-0 mt-0.5 rounded border-2 flex items-center justify-center ${
+                                      isSelected ? "bg-cyan-600 border-cyan-600" : "border-gray-400"
+                                    }`}>
+                                      {isSelected && (
+                                        <svg className="w-2 h-2 sm:w-3 sm:h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                        </svg>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <div className={`w-4 h-4 sm:w-5 sm:h-5 shrink-0 mt-0.5 rounded-full border-2 flex items-center justify-center ${
+                                      isSelected ? "border-cyan-600" : "border-gray-400"
+                                    }`}>
+                                      {isSelected && <div className="w-2 h-2 sm:w-3 sm:h-3 bg-cyan-600 rounded-full"></div>}
+                                    </div>
+                                  )}
+                                  <span className="leading-relaxed text-sm sm:text-base">{option.option_text}</span>
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-0 pt-4">
+                      <div className="flex gap-2 w-full sm:w-auto">
                         <button
-                          key={option.answer_id}
-                          onClick={() => handleAnswerSelect(option.answer_id)}
-                          className={`w-full p-4 rounded-xl text-left text-base transition-all duration-200 border-2 ${
-                            isSelected 
-                              ? "bg-gradient-to-r from-cyan-50 to-blue-50 border-cyan-500 shadow-md transform scale-[1.02]" 
-                              : "bg-gray-50 hover:bg-gray-100 border-gray-300 hover:border-gray-400 hover:shadow-sm"
-                          }`}
+                          onClick={toggleQuestionView}
+                          className="flex-1 sm:flex-none px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 text-xs sm:text-sm font-medium"
                         >
-                          <div className="flex items-start gap-3">
-                            {currentQuestion.question_type === "CB" ? (
-                              <div className={`w-6 h-6 shrink-0 mt-0.5 rounded border-2 flex items-center justify-center transition-all ${
-                                isSelected ? "bg-cyan-600 border-cyan-600" : "border-gray-400"
-                              }`}>
-                                {isSelected && (
-                                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                                  </svg>
-                                )}
-                              </div>
-                            ) : (
-                              <div className={`w-6 h-6 shrink-0 mt-0.5 rounded-full border-2 flex items-center justify-center transition-all ${
-                                isSelected ? "border-cyan-600 bg-cyan-600" : "border-gray-400"
-                              }`}>
-                                {isSelected && (
-                                  <div className="w-3 h-3 bg-white rounded-full"></div>
-                                )}
-                              </div>
-                            )}
-                            <span className={`leading-relaxed ${isSelected ? 'font-medium text-gray-900' : 'text-gray-700'}`}>
-                              {option.option_text}
+                          <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                          </svg>
+                          All Questions
+                        </button>
+                        
+                        {currentQuestionIndex > 0 && (
+                          <button
+                            onClick={handlePrevious}
+                            className="flex-1 sm:flex-none px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 text-xs sm:text-sm font-medium"
+                          >
+                            <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                            </svg>
+                            Previous
+                          </button>
+                        )}
+                      </div>
+
+                      <button
+                        onClick={handleNext}
+                        disabled={isSubmitting}
+                        className={`w-full sm:w-auto bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 px-6 sm:px-12 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 text-base sm:text-lg shadow-lg hover:shadow-xl ${
+                          isSubmitting ? "opacity-50 cursor-not-allowed" : ""
+                        }`}
+                      >
+                        {isSubmitting ? (
+                          <>
+                            <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            <span className="text-sm sm:text-base">Submitting...</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-sm sm:text-base">
+                              {currentQuestionIndex < questions.length - 1 ? "Next" : "Submit"}
                             </span>
-                          </div>
-                        </button>
-                      );
-                    })}
+                            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                            </svg>
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
-
-              {/* Action Button */}
-              <button
-                onClick={handleNext}
-                disabled={isSubmitting}
-                className={`w-full bg-cyan-600 hover:from-cyan-700 hover:to-blue-700 text-white font-bold py-4 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 text-lg shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed ${
-                  isSubmitting ? "cursor-not-allowed" : ""
-                }`}
-              >
-                {isSubmitting ? (
-                  <>
-                    <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
-                    Submitting...
-                  </>
-                ) : (
-                  <>
-                    {currentQuestionIndex < questions.length - 1 ? "Next Question" : "Submit Quiz"}
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                    </svg>
-                  </>
-                )}
-              </button>
-            </div>
+            )}
           </div>
-        ) : (
-          // NO PDF - Regular single column layout
-          <div className="max-w-4xl mx-auto">
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
-              {/* Progress Bar */}
-              <div className="mb-8">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-semibold text-gray-600">Progress</span>
-                  <span className="text-sm font-bold text-cyan-600">
-                    Question {currentQuestionIndex + 1} / {questions.length}
-                  </span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2.5">
-                  <div 
-                    className="bg-cyan-600 h-2.5 rounded-full transition-all duration-300"
-                    style={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }}
-                  ></div>
-                </div>
-              </div>
-
-              <div className="mb-6">
-                <Stack spacing={3}>
-                  <Breadcrumbs separator="›" sx={{ mb: 1 }}>
-                    <Typography sx={{ fontSize: { xs: 12, sm: 14, md: 16 } }}>
-                      {getQuestionTypeLabel(currentQuestion.question_type)}
-                    </Typography>
-                    <Typography sx={{ color: '#2E99B0', fontSize: { xs: 12, sm: 14, md: 16 } }}>
-                      Question {currentQuestionIndex + 1} / {questions.length}
-                    </Typography>
-                  </Breadcrumbs>
-                  <Typography sx={{ color: '#1a1a1a', fontSize: { xs: 20, sm: 24, md: 28, lg: 32 }, fontWeight: 'bold', lineHeight: 1.3 }}>
-                    {currentQuestion.question_text}
-                  </Typography>
-                </Stack>
-              </div>
-
-              <div className="mb-8">
-                {currentQuestion.question_type === "DESC" ? (
-                  <div>
-                    <textarea
-                      value={descriptiveAnswer}
-                      onChange={(e) => setDescriptiveAnswer(e.target.value)}
-                      placeholder="Type your answer here..."
-                      className="w-full p-5 rounded-xl text-base font-normal border-2 border-gray-300 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 focus:outline-none resize-none"
-                      rows={10}
-                      style={{ minHeight: '250px' }}
-                    />
-                    <p className="text-sm text-gray-500 mt-2">Characters: {descriptiveAnswer.length}</p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {currentQuestion.options.map((option) => {
-                      const isSelected = currentQuestion.question_type === "CB" 
-                        ? selectedAnswers.includes(option.answer_id)
-                        : selectedAnswer === option.answer_id;
-                      
-                      return (
-                        <button
-                          key={option.answer_id}
-                          onClick={() => handleAnswerSelect(option.answer_id)}
-                          className={`p-5 rounded-xl text-left text-base font-normal transition-all duration-200 border-2 ${
-                            isSelected 
-                              ? "bg-gradient-to-r from-cyan-50 to-blue-50 border-cyan-500 shadow-md" 
-                              : "bg-gray-50 hover:bg-gray-100 border-gray-300 hover:border-gray-400"
-                          }`}
-                        >
-                          <div className="flex items-start gap-3">
-                            {currentQuestion.question_type === "CB" ? (
-                              <div className={`w-5 h-5 shrink-0 mt-0.5 rounded border-2 flex items-center justify-center ${
-                                isSelected ? "bg-cyan-600 border-cyan-600" : "border-gray-400"
-                              }`}>
-                                {isSelected && (
-                                  <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                                  </svg>
-                                )}
-                              </div>
-                            ) : (
-                              <div className={`w-5 h-5 shrink-0 mt-0.5 rounded-full border-2 flex items-center justify-center ${
-                                isSelected ? "border-cyan-600" : "border-gray-400"
-                              }`}>
-                                {isSelected && <div className="w-3 h-3 bg-cyan-600 rounded-full"></div>}
-                              </div>
-                            )}
-                            <span className="leading-relaxed">{option.option_text}</span>
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-              <div className="flex justify-end pt-4">
-                <button
-                  onClick={handleNext}
-                  disabled={isSubmitting}
-                  className={`bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white font-bold px-12 py-4 rounded-xl transition-all duration-200 flex items-center gap-2 text-lg shadow-lg hover:shadow-xl ${
-                    isSubmitting ? "opacity-50 cursor-not-allowed" : ""
-                  }`}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      Submitting...
-                    </>
-                  ) : (
-                    <>
-                      {currentQuestionIndex < questions.length - 1 ? "Next Question" : "Submit Quiz"}
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                      </svg>
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
+        </div>
       </div>
 
       <Footer />
 
-      <Dialog open={modalState.open} onClose={closeModal} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: '12px', padding: '8px' } }}>
-        <DialogTitle sx={{ fontSize: '20px', fontWeight: 'bold', color: '#1a1a1a', pb: 1 }}>{modalState.title}</DialogTitle>
+      <Dialog open={modalState.open} onClose={closeModal} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: '12px', padding: '8px', m: 2 } }}>
+        <DialogTitle sx={{ fontSize: '18px', fontWeight: 'bold', color: '#1a1a1a', pb: 1 }}>{modalState.title}</DialogTitle>
         <DialogContent>
-          <Typography sx={{ fontSize: '16px', color: '#4a5568', lineHeight: 1.6 }}>{modalState.message}</Typography>
+          <Typography sx={{ fontSize: '14px', color: '#4a5568', lineHeight: 1.6 }}>{modalState.message}</Typography>
         </DialogContent>
-        <DialogActions sx={{ padding: '16px 24px' }}>
+        <DialogActions sx={{ padding: '12px 16px', flexDirection: isMobile ? 'column' : 'row', gap: 1 }}>
           {modalState.showCancel && (
-            <Button onClick={closeModal} sx={{ color: '#6b7280', textTransform: 'none', fontSize: '15px', fontWeight: 500, '&:hover': { backgroundColor: '#f3f4f6' } }}>
+            <Button onClick={closeModal} sx={{ 
+              color: '#6b7280', 
+              textTransform: 'none', 
+              fontSize: '14px', 
+              fontWeight: 500, 
+              '&:hover': { backgroundColor: '#f3f4f6' },
+              width: isMobile ? '100%' : 'auto'
+            }}>
               Cancel 
             </Button>
           )}
           <Button onClick={modalState.onConfirm} variant="contained" sx={{ 
               bgcolor: modalState.type === 'exit' ? '#dc2626' : '#2E99B0',
               '&:hover': { bgcolor: modalState.type === 'exit' ? '#b91c1c' : '#267a8d' },
-              textTransform: 'none', fontSize: '15px', fontWeight: 600, boxShadow: '2px 2px 0px 0px rgba(0, 0, 0, 0.1)'
+              textTransform: 'none', 
+              fontSize: '14px', 
+              fontWeight: 600, 
+              boxShadow: '2px 2px 0px 0px rgba(0, 0, 0, 0.1)',
+              width: isMobile ? '100%' : 'auto'
             }}>
             {modalState.type === 'exit' ? 'Exit Test' : 'OK'}
           </Button>
