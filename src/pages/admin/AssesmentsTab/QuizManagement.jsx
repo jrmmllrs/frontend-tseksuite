@@ -25,15 +25,16 @@ import {
 const QuizManagement = ({ department, onBack }) => {
   const [quizzes, setQuizzes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
-  const [newQuiz, setNewQuiz] = useState({ 
-    quiz_name: "", 
-    time_limit: "", 
+  const [newQuiz, setNewQuiz] = useState({
+    quiz_name: "",
+    time_limit: "",
     pdf_link: "",
-    is_pdf_test: false 
+    is_pdf_test: false,
   });
   const [editingQuiz, setEditingQuiz] = useState(null);
   const [deletingQuiz, setDeletingQuiz] = useState(null);
@@ -77,14 +78,13 @@ const QuizManagement = ({ department, onBack }) => {
 
   //added URL validation function
   const isValidURL = (url) => {
-  try {
-    const parsed = new URL(url);
-    return parsed.protocol === "http:" || parsed.protocol === "https:";
-  } catch (err) {
-    return false;
-  }
-};
-
+    try {
+      const parsed = new URL(url);
+      return parsed.protocol === "http:" || parsed.protocol === "https:";
+    } catch (err) {
+      return false;
+    }
+  };
 
   const handleAddQuiz = async () => {
     if (!newQuiz.quiz_name.trim()) {
@@ -104,10 +104,12 @@ const QuizManagement = ({ department, onBack }) => {
       return;
     }
 
+    setIsProcessing(true);
+
     try {
       // Try different payload structures
       let payload;
-      
+
       if (newQuiz.is_pdf_test) {
         // For PDF test - only include pdf_link, exclude time_limit
         payload = {
@@ -130,21 +132,30 @@ const QuizManagement = ({ department, onBack }) => {
 
       await addQuiz(department.dept_id, payload);
       await fetchQuizzes();
-      setNewQuiz({ 
-        quiz_name: "", 
-        time_limit: "", 
+      setNewQuiz({
+        quiz_name: "",
+        time_limit: "",
         pdf_link: "",
-        is_pdf_test: false 
+        is_pdf_test: false,
       });
       toast.success(newQuiz.is_pdf_test ? "PDF Test Added!" : "Quiz Added!");
       setShowAddModal(false);
       setError(null);
     } catch (err) {
-      const errorMessage = err.response?.data?.message || err.response?.data?.error || "Failed to create quiz";
+      const errorMessage =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        "Failed to create quiz";
       setError(errorMessage);
       console.error("Error creating quiz:", err);
       console.error("Error response data:", err.response?.data);
-      toast.error(newQuiz.is_pdf_test ? "PDF Test Creation Failed!" : "Quiz Creation Failed!");
+      toast.error(
+        newQuiz.is_pdf_test
+          ? "PDF Test Creation Failed!"
+          : "Quiz Creation Failed!"
+      );
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -164,21 +175,22 @@ const QuizManagement = ({ department, onBack }) => {
     // }
 
     // PDF test: pdf_link required and must be valid URL
-if (editingQuiz.is_pdf_test) {
-  if (!editingQuiz.pdf_link.trim()) {
-    toast.error("Please enter PDF link for PDF test");
-    return;
-  }
-  if (!isValidURL(editingQuiz.pdf_link.trim())) {
-    toast.error("Please enter a valid URL");
-    return;
-  }
-}
+    if (editingQuiz.is_pdf_test) {
+      if (!editingQuiz.pdf_link.trim()) {
+        toast.error("Please enter PDF link for PDF test");
+        return;
+      }
+      if (!isValidURL(editingQuiz.pdf_link.trim())) {
+        toast.error("Please enter a valid URL");
+        return;
+      }
+    }
 
+    setIsProcessing(true);
 
     try {
       let payload;
-      
+
       if (editingQuiz.pdf_link) {
         // For PDF test - only update pdf_link, exclude time_limit
         payload = {
@@ -204,10 +216,15 @@ if (editingQuiz.is_pdf_test) {
       setEditingQuiz(null);
       setError(null);
     } catch (err) {
-      const errorMessage = err.response?.data?.message || err.response?.data?.error || "Failed to update quiz";
+      const errorMessage =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        "Failed to update quiz";
       setError(errorMessage);
       console.error("Error updating quiz:", err);
       toast.error("Quiz Update Failed!");
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -322,6 +339,7 @@ if (editingQuiz.is_pdf_test) {
               <button
                 onClick={() => setShowAddModal(true)}
                 className="flex items-center justify-center gap-2 bg-[#217486] text-white px-6 py-3 rounded-xl hover:bg-[#1a5d6d] font-medium transition-all hover:shadow-xl hover:shadow-[#217486]/40"
+                {...(isProcessing ? "disabled" : "")}
               >
                 <Plus className="w-5 h-5 hidden sm:inline" />
                 Create Quiz
@@ -412,7 +430,10 @@ if (editingQuiz.is_pdf_test) {
                             onClick={(e) => {
                               e.stopPropagation();
                               //added
-                              setEditingQuiz({ ...quiz, is_pdf_test: !!quiz.pdf_link });
+                              setEditingQuiz({
+                                ...quiz,
+                                is_pdf_test: !!quiz.pdf_link,
+                              });
                               setShowEditModal(true);
                               setOpenMenuId(null);
                             }}
@@ -437,8 +458,8 @@ if (editingQuiz.is_pdf_test) {
                       )}
                     </div>
                   </div>
-                  
-               <div className="flex justify-between items-center mt-3 text-white/90">
+
+                  <div className="flex justify-between items-center mt-3 text-white/90">
                     {/* Left side: Test type */}
                     <span className="inline-block px-2 py-1 bg-white/20 text-white text-xs rounded-md font-medium">
                       {quiz.pdf_link ? "PDF Test" : "Standard Test"}
@@ -449,11 +470,11 @@ if (editingQuiz.is_pdf_test) {
                       {quiz.time_limit && <Clock className="w-4 h-4" />}
                       <span className="text-sm font-medium">
                         {quiz.time_limit}{" "}
-                        {!quiz.pdf_link && (quiz.time_limit === 1 ? "minute" : "minutes")}
+                        {!quiz.pdf_link &&
+                          (quiz.time_limit === 1 ? "minute" : "minutes")}
                       </span>
                     </div>
                   </div>
-
                 </div>
 
                 <div className="p-4 sm:p-5">
@@ -497,7 +518,9 @@ if (editingQuiz.is_pdf_test) {
                             e.stopPropagation();
                             openInviteModal(quiz);
                           }}
-                          disabled={!quiz.question_count || quiz.question_count === 0} 
+                          disabled={
+                            !quiz.question_count || quiz.question_count === 0
+                          }
                           className="w-full flex items-center justify-center gap-2 bg-[#217486] hover:bg-[#1a5d6d] text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-all shadow-md shadow-[#217486]/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#217486]"
                           title={
                             !quiz.question_count || quiz.question_count === 0
@@ -528,7 +551,7 @@ if (editingQuiz.is_pdf_test) {
                           }
                           className="flex-1 flex items-center justify-center gap-2 bg-[#217486] hover:bg-[#1a5d6d] text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-all shadow-md shadow-[#217486]/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#217486]"
                           title={
-                            !quiz.question_count || quiz.question_count === 0 
+                            !quiz.question_count || quiz.question_count === 0
                               ? "Add questions before generating invites"
                               : "Generate invite link"
                           }
@@ -568,7 +591,13 @@ if (editingQuiz.is_pdf_test) {
                 <div className="flex gap-4">
                   <button
                     type="button"
-                    onClick={() => setNewQuiz({ ...newQuiz, is_pdf_test: false, pdf_link: "" })}
+                    onClick={() =>
+                      setNewQuiz({
+                        ...newQuiz,
+                        is_pdf_test: false,
+                        pdf_link: "",
+                      })
+                    }
                     className={`flex-1 py-3 px-4 rounded-xl border-2 transition-all font-medium ${
                       !newQuiz.is_pdf_test
                         ? "border-[#217486] bg-[#217486] text-white shadow-lg shadow-[#217486]/30"
@@ -580,7 +609,13 @@ if (editingQuiz.is_pdf_test) {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setNewQuiz({ ...newQuiz, is_pdf_test: true, time_limit: "" })}
+                    onClick={() =>
+                      setNewQuiz({
+                        ...newQuiz,
+                        is_pdf_test: true,
+                        time_limit: "",
+                      })
+                    }
                     className={`flex-1 py-3 px-4 rounded-xl border-2 transition-all font-medium ${
                       newQuiz.is_pdf_test
                         ? "border-[#2a8fa5] bg-[#2a8fa5] text-white shadow-lg shadow-[#2a8fa5]/30"
@@ -603,7 +638,9 @@ if (editingQuiz.is_pdf_test) {
                   onChange={(e) =>
                     setNewQuiz({ ...newQuiz, quiz_name: e.target.value })
                   }
-                  placeholder={`Enter ${newQuiz.is_pdf_test ? "test" : "quiz"} name`}
+                  placeholder={`Enter ${
+                    newQuiz.is_pdf_test ? "test" : "quiz"
+                  } name`}
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#217486] focus:border-transparent text-sm sm:text-base"
                   onKeyPress={(e) => e.key === "Enter" && handleAddQuiz()}
                   autoFocus
@@ -652,11 +689,11 @@ if (editingQuiz.is_pdf_test) {
               <button
                 onClick={() => {
                   setShowAddModal(false);
-                  setNewQuiz({ 
-                    quiz_name: "", 
-                    time_limit: "", 
+                  setNewQuiz({
+                    quiz_name: "",
+                    time_limit: "",
                     pdf_link: "",
-                    is_pdf_test: false 
+                    is_pdf_test: false,
                   });
                 }}
                 className="flex-1 px-4 py-3 text-gray-700 bg-white hover:bg-gray-100 border border-gray-300 rounded-xl transition-colors font-medium text-sm sm:text-base"
@@ -666,14 +703,17 @@ if (editingQuiz.is_pdf_test) {
               <button
                 onClick={handleAddQuiz}
                 disabled={
-                  !newQuiz.quiz_name.trim() || 
+                  isProcessing ||
+                  !newQuiz.quiz_name.trim() ||
                   (!newQuiz.is_pdf_test && !newQuiz.time_limit) ||
                   // (newQuiz.is_pdf_test && !newQuiz.pdf_link.trim())
-                  (newQuiz.is_pdf_test && (!newQuiz.pdf_link.trim() || !isValidURL(newQuiz.pdf_link.trim())))
+                  (newQuiz.is_pdf_test &&
+                    (!newQuiz.pdf_link.trim() ||
+                      !isValidURL(newQuiz.pdf_link.trim())))
                 }
                 className={`flex-1 px-4 py-3 text-white rounded-xl transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed shadow-lg text-sm sm:text-base ${
-                  newQuiz.is_pdf_test 
-                    ? "bg-[#2a8fa5] hover:bg-[#217486] shadow-[#2a8fa5]/30" 
+                  newQuiz.is_pdf_test
+                    ? "bg-[#2a8fa5] hover:bg-[#217486] shadow-[#2a8fa5]/30"
                     : "bg-[#217486] hover:bg-[#1a5d6d] shadow-[#217486]/30"
                 }`}
               >
@@ -693,7 +733,8 @@ if (editingQuiz.is_pdf_test) {
                 Edit {editingQuiz.is_pdf_test ? "PDF Test" : "Quiz"}
               </h2>
               <p className="text-white/80 text-sm mt-1">
-                Update {editingQuiz.is_pdf_test ? "pdf test" : "quiz"} information
+                Update {editingQuiz.is_pdf_test ? "pdf test" : "quiz"}{" "}
+                information
               </p>
             </div>
 
@@ -711,12 +752,14 @@ if (editingQuiz.is_pdf_test) {
                       quiz_name: e.target.value,
                     })
                   }
-                  placeholder={`${editingQuiz.is_pdf_test ? "PDF Test" : "Quiz"} name`}
+                  placeholder={`${
+                    editingQuiz.is_pdf_test ? "PDF Test" : "Quiz"
+                  } name`}
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#217486] focus:border-transparent text-sm sm:text-base"
                   autoFocus
                 />
               </div>
-              
+
               {/* Conditional Fields */}
               {!editingQuiz.is_pdf_test ? (
                 <div>
@@ -771,10 +814,13 @@ if (editingQuiz.is_pdf_test) {
               <button
                 onClick={handleUpdateQuiz}
                 disabled={
-                  !editingQuiz.quiz_name.trim() || 
+                  isProcessing ||
+                  !editingQuiz.quiz_name.trim() ||
                   (!editingQuiz.pdf_link && !editingQuiz.time_limit) ||
                   // (editingQuiz.pdf_link && !editingQuiz.pdf_link.trim())
-                   (editingQuiz.is_pdf_test && (!editingQuiz.pdf_link.trim() || !isValidURL(editingQuiz.pdf_link.trim())))
+                  (editingQuiz.is_pdf_test &&
+                    (!editingQuiz.pdf_link.trim() ||
+                      !isValidURL(editingQuiz.pdf_link.trim())))
                 }
                 className="flex-1 px-4 py-3 bg-[#217486] hover:bg-[#1a5d6d] text-white rounded-xl transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[#217486]/30 text-sm sm:text-base"
               >

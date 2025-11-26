@@ -28,6 +28,7 @@ const QuestionModal = ({
   setQuestion,
   onSave,
   isPdfTest,
+  isProcessing,
 }) => {
   if (!isOpen) return null;
 
@@ -63,20 +64,6 @@ const QuestionModal = ({
       options: prev.options.filter((_, i) => i !== index),
     }));
   };
-
-  // const setCorrectAnswer = (index) => {
-  //   if (question.question_type === "CB" || question.question_type === "DESC") {
-  //     updateOption(index, "is_correct", !question.options[index].is_correct);
-  //   } else {
-  //     setQuestion((prev) => ({
-  //       ...prev,
-  //       options: prev.options.map((opt, i) => ({
-  //         ...opt,
-  //         is_correct: i === index,
-  //       })),
-  //     }));
-  //   }
-  // };
 
   const setCorrectAnswer = (index) => {
     if (question.question_type === "CB") {
@@ -363,6 +350,7 @@ const QuestionModal = ({
           <button
             onClick={onSave}
             className="w-full sm:w-auto px-4 sm:px-6 py-2.5 bg-[#217486] text-white rounded-lg hover:bg-[#1a5d6d] font-medium transition-colors shadow-lg shadow-[#217486]/30 text-sm sm:text-base"
+            disabled={isProcessing}
           >
             Save Question
           </button>
@@ -414,6 +402,7 @@ const QuestionManagement = ({ quiz, onBack }) => {
   const [editingIndex, setEditingIndex] = useState(null);
   const [deleteIndex, setDeleteIndex] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const isPdfTest = quiz?.pdf_link ? true : false;
 
@@ -496,65 +485,6 @@ const QuestionManagement = ({ quiz, onBack }) => {
     }
   };
 
-  // const handleSave = async () => {
-  //   const q = currentQuestion;
-  //   if (!q.question_text.trim()) return toast.error("Question text required");
-
-  //   if (q.question_type === "DESC") {
-  //     if (!q.options[0]?.option_text.trim()) {
-  //       return toast.error(
-  //         "Correct answer is required for descriptive questions"
-  //       );
-  //     }
-  //   } else if (q.question_type === "MC" || q.question_type === "CB") {
-  //     if (!q.options || q.options.length < 2) {
-  //       return toast.error("At least 2 options are required");
-  //     }
-  //     for (let i = 0; i < q.options.length; i++) {
-  //       if (!q.options[i].option_text.trim()) {
-  //         return toast.error(`All options must have text!`);
-  //       }
-  //     }
-  //   }
-
-  //   try {
-  //     if (editingIndex !== null) {
-  //       await updateQuestion(quiz.quiz_id, q.question_id, q);
-  //       toast.success("Question Updated!");
-
-  //       const original = questions[editingIndex];
-  //       const originalIds = original.options
-  //         .map((o) => o.answer_id)
-  //         .filter(Boolean);
-
-  //       for (const opt of q.options) {
-  //         if (opt.answer_id) {
-  //           await updateAnswer(opt.answer_id, opt);
-  //         } else {
-  //           await addAnswer(q.question_id, opt);
-  //         }
-  //       }
-
-  //       for (const oldId of originalIds) {
-  //         if (!q.options.find((o) => o.answer_id === oldId)) {
-  //           await deleteAnswer(oldId);
-  //         }
-  //       }
-  //     } else {
-  //       const { question_id } = await addQuestion(quiz.quiz_id, q);
-  //       toast.success("Question Added!");
-  //       for (const opt of q.options) {
-  //         await addAnswer(question_id, opt);
-  //       }
-  //     }
-  //     setModalOpen(false);
-  //     fetchQuestions();
-  //   } catch (err) {
-  //     console.error("Save error:", err);
-  //     toast.error("Failed to save question");
-  //   }
-  // };
-
   const handleSave = async () => {
     const q = currentQuestion;
     if (!q.question_text.trim()) return toast.error("Question text required");
@@ -565,6 +495,8 @@ const QuestionManagement = ({ quiz, onBack }) => {
     ) {
       return toast.error("At least 2 options are required");
     }
+
+    setIsProcessing(true);
 
     try {
       if (editingIndex !== null) {
@@ -599,6 +531,8 @@ const QuestionManagement = ({ quiz, onBack }) => {
     } catch (err) {
       console.error("Save error:", err);
       toast.error("Failed to save question");
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -831,6 +765,7 @@ const QuestionManagement = ({ quiz, onBack }) => {
           setQuestion={setCurrentQuestion}
           onSave={handleSave}
           isPdfTest={isPdfTest}
+          isProcessing={isProcessing}
         />
 
         <DeleteModal
