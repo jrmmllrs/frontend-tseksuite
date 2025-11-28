@@ -12,7 +12,7 @@ import AdminProtectedRoutes from "../routes/AdminProtectedRoutes";
 
 // Applicant Pages
 import ApplicantOnboardingPage from "./pages/applicant/ApplicantOnboardingPage";
-import ApplicantTestPage from "./pages/applicant/TestPage";
+import ApplicantTestPage from "./pages/applicant/TestPage/index";
 import TestInstructions from "./pages/applicant/TestInstructions";
 import CompletedTestResults from "./pages/applicant/CompletedTestResults";
 import AbandonedTestScreen from "./pages/applicant/AbandonTestScreen";
@@ -22,8 +22,8 @@ import DashboardPage from "./pages/admin/DashboardPage";
 
 // Admin Pages - Examiners Tab
 import ExamsDashboard from "./pages/admin/ExamsDashboard";
-import TestPage from "./pages/admin/ApplicantsTab/TestsPage";
-import ResultsPage from "./pages/admin/ApplicantsTab/ResultsPage/ResultsPage";
+import TestPage from "./pages/admin/ApplicantsTab/TestPage/index";
+import ResultsPage from "./pages/admin/ApplicantsTab/ResultsPage/index";
 
 // Admin Pages - Assessments Tab
 import TestBankPage from "./pages/admin/AssesmentsTab/TestBankPage";
