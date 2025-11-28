@@ -4,30 +4,18 @@ import toast from "react-hot-toast";
 import { useEffect, useState } from "react";
 import { getAllExaminers, getAllResults } from "../../../api/api";
 import NoDataFound from "../../components/NoDataFound";
-import LoadingIndicator from "../../components/LoadingIndicator";
 import { useAuthContext } from "../../contexts/AuthProvider";
 import {
-  User,
   CircleCheck,
   Ban,
-  X,
-  Check,
   TrendingUp,
   Users,
-  Clock,
   Target,
   BarChart3,
-  Calendar,
-  Award,
-  Activity,
-  Smartphone,
-  Monitor,
-  Star,
   Trophy,
   TrendingDown,
 } from "lucide-react";
 
-// Recharts imports
 import {
   AreaChart,
   Area,
@@ -42,7 +30,6 @@ import {
   Legend,
   BarChart,
   Bar,
-  LineChart,
   Line,
   RadialBarChart,
   RadialBar,
@@ -56,14 +43,20 @@ import {
   CardContent,
   CardFooter,
 } from "@/components/ui/card";
+import DashboardSkeletonLoader from "@/components/skeletons/DashboardSkeletonLoader";
+import CustomRadialTooltip from "@/components/CustomRadialTooltip";
+import CustomAreaTooltip from "@/components/CustomAreaTooltip";
+import CustomPieTooltip from "@/components/CustomPieTooltip";
+import CustomBarTooltip from "@/components/CustomBarTooltip";
+import { generateLast30DaysData, generateWeeklyPerformance } from "../../../helpers/helpers";
 
 function DashboardPage() {
   const isMobile = useMediaQuery("(max-width: 768px)");
-  const isTablet = useMediaQuery("(max-width: 1024px)");
   const [examiners, setExaminers] = useState([]);
   const [results, setResults] = useState([]);
   const [isDataLoading, setIsDataLoading] = useState(false);
-  const { user, isLoading, error } = useAuthContext();
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const { isLoading } = useAuthContext();
 
   const fetchAllExaminers = async () => {
     try {
@@ -75,6 +68,7 @@ function DashboardPage() {
       toast.error("Failed to fetch examiners");
     } finally {
       setIsDataLoading(false);
+      setIsInitialLoading(false);
     }
   };
 
@@ -88,6 +82,7 @@ function DashboardPage() {
       toast.error("Failed to fetch results");
     } finally {
       setIsDataLoading(false);
+      setIsInitialLoading(false);
     }
   };
 
@@ -96,7 +91,6 @@ function DashboardPage() {
     fetchAllResults();
   }, []);
 
-  // Calculate key metrics
   const totalTests = results.length;
   const completedTests = results.filter((r) => r.status === "COMPLETED").length;
   const abandonedTests = results.filter((r) => r.status === "ABANDONED").length;
@@ -109,7 +103,6 @@ function DashboardPage() {
           .reduce((acc, curr) => acc + (curr.score || 0), 0) / completedTests
       : 0;
 
-  // Performance tiers data for the new chart
   const performanceTiers = {
     excellent:
       completedTests > 0
@@ -142,7 +135,6 @@ function DashboardPage() {
         : 0,
   };
 
-  // New Score Distribution Data - Radial Bar Chart
   const scoreDistributionData = [
     {
       name: "Excellent",
@@ -182,94 +174,17 @@ function DashboardPage() {
     },
   ];
 
-  // Data for radial bar chart
+
   const radialData = scoreDistributionData.map(item => ({
     ...item,
     fullMark: completedTests,
   }));
 
-  // Weekly performance data - simplified for mobile
-  const generateWeeklyPerformance = () => {
-    const days = isMobile ? ["M", "T", "W", "T", "F", "S", "S"] : ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-    const weeklyData = days.map((day) => ({
-      day,
-      completed: 0,
-      abandoned: 0,
-      avgScore: 0,
-    }));
 
-    results.forEach((result) => {
-      const resultDate = new Date(result.created_at);
-      const dayIndex = (resultDate.getDay() + 6) % 7;
 
-      if (weeklyData[dayIndex]) {
-        if (result.status === "COMPLETED") {
-          weeklyData[dayIndex].completed += 1;
-          weeklyData[dayIndex].avgScore += result.score || 0;
-        } else if (result.status === "ABANDONED") {
-          weeklyData[dayIndex].abandoned += 1;
-        }
-      }
-    });
+  const chartData = generateLast30DaysData(isMobile, results);
+  const weeklyData = generateWeeklyPerformance(isMobile, results);
 
-    // Calculate average scores
-    weeklyData.forEach((day) => {
-      if (day.completed > 0) {
-        day.avgScore = Math.round(day.avgScore / day.completed);
-      }
-    });
-
-    return weeklyData;
-  };
-
-  // Generate last 30 days data for the area chart - reduced data points for mobile
-  const generateLast30DaysData = () => {
-    const days = [];
-    const today = new Date();
-    const dataPoints = isMobile ? 15 : 30;
-
-    for (let i = dataPoints - 1; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(today.getDate() - i);
-
-      const dateString = isMobile 
-        ? date.toLocaleDateString("en-US", { day: "numeric" })
-        : date.toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-          });
-
-      days.push({
-        date: dateString,
-        COMPLETED: 0,
-        ABANDONED: 0,
-        fullDate: date.toISOString().split("T")[0],
-      });
-    }
-
-    // Populate with actual data
-    results.forEach((result) => {
-      const resultDate = new Date(result.created_at)
-        .toISOString()
-        .split("T")[0];
-      const dayData = days.find((day) => day.fullDate === resultDate);
-
-      if (dayData) {
-        if (result.status === "COMPLETED") {
-          dayData.COMPLETED += 1;
-        } else if (result.status === "ABANDONED") {
-          dayData.ABANDONED += 1;
-        }
-      }
-    });
-
-    return days;
-  };
-
-  const chartData = generateLast30DaysData();
-  const weeklyData = generateWeeklyPerformance();
-
-  // Department-wise Donut Chart Data
   const departmentCounts = results.reduce((acc, r) => {
     const dept = r.department || "Unknown";
     acc[dept] = (acc[dept] || 0) + 1;
@@ -316,144 +231,12 @@ function DashboardPage() {
     "#ec4899",
   ];
 
-  // Custom Tooltip for Area Chart
-  const CustomAreaTooltip = ({ active, payload, label }) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-white/95 backdrop-blur-lg border border-gray-200/50 rounded-xl p-4 shadow-2xl">
-          <p className="text-sm font-semibold text-gray-800 mb-2">{label}</p>
-          <div className="space-y-1">
-            {payload.map((entry, index) => (
-              <div key={index} className="flex items-center gap-2">
-                <div
-                  className="w-3 h-3 rounded-full"
-                  style={{ backgroundColor: entry.color }}
-                />
-                <span className="text-sm text-gray-600 capitalize">
-                  {entry.dataKey.toLowerCase()}:
-                </span>
-                <span className="text-sm font-semibold text-gray-800">
-                  {entry.value}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      );
-    }
-    return null;
-  };
-
-  // Custom Tooltip for Pie Chart
-  const CustomPieTooltip = ({ active, payload }) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload;
-      return (
-        <div className="bg-white/95 backdrop-blur-lg border border-gray-200/50 rounded-xl p-4 shadow-2xl min-w-[200px]">
-          <p className="text-sm font-semibold text-gray-800 mb-3">
-            {data.name}
-          </p>
-          <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Total Tests:</span>
-              <span className="text-sm font-semibold text-gray-800">
-                {data.value}
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-green-600">Completed:</span>
-              <span className="text-sm font-semibold text-gray-800">
-                {data.completed}
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-red-600">Abandoned:</span>
-              <span className="text-sm font-semibold text-gray-800">
-                {data.abandoned}
-              </span>
-            </div>
-            <div className="pt-2 border-t border-gray-200/50">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Success Rate:</span>
-                <span className="text-sm font-semibold text-green-600">
-                  {Math.round((data.completed / data.value) * 100)}%
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      );
-    }
-    return null;
-  };
-
-  // Custom Tooltip for Bar Chart
-  const CustomBarTooltip = ({ active, payload, label }) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-white/95 backdrop-blur-lg border border-gray-200/50 rounded-xl p-4 shadow-2xl">
-          <p className="text-sm font-semibold text-gray-800 mb-2">{label}</p>
-          <div className="space-y-1">
-            {payload.map((entry, index) => (
-              <div key={index} className="flex items-center gap-2">
-                <div
-                  className="w-3 h-3 rounded-full"
-                  style={{ backgroundColor: entry.color }}
-                />
-                <span className="text-sm text-gray-600 capitalize">
-                  {entry.dataKey === "avgScore"
-                    ? "Average Score"
-                    : entry.dataKey.toLowerCase()}
-                  :
-                </span>
-                <span className="text-sm font-semibold text-gray-800">
-                  {entry.dataKey === "avgScore"
-                    ? `${entry.value}%`
-                    : entry.value}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      );
-    }
-    return null;
-  };
-
-  // Custom Tooltip for Radial Chart
-  const CustomRadialTooltip = ({ active, payload }) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload;
-      return (
-        <div className="bg-white/95 backdrop-blur-lg border border-gray-200/50 rounded-xl p-4 shadow-2xl">
-          <p className="text-sm font-semibold text-gray-800 mb-2">{data.name}</p>
-          <div className="space-y-1">
-            <div className="flex justify-between items-center gap-4">
-              <span className="text-sm text-gray-600">Tests:</span>
-              <span className="text-sm font-semibold text-gray-800">
-                {data.value}
-              </span>
-            </div>
-            <div className="flex justify-between items-center gap-4">
-              <span className="text-sm text-gray-600">Percentage:</span>
-              <span className="text-sm font-semibold text-gray-800">
-                {data.percentage.toFixed(1)}%
-              </span>
-            </div>
-            <div className="flex justify-between items-center gap-4">
-              <span className="text-sm text-gray-600">Range:</span>
-              <span className="text-sm font-semibold text-gray-800">
-                {data.range}
-              </span>
-            </div>
-          </div>
-        </div>
-      );
-    }
-    return null;
-  };
-
-  if (isLoading) return <div>Loading user...</div>;
+  if (isInitialLoading && isDataLoading && isLoading) {
+    return <DashboardSkeletonLoader/>
+  }
+  if(!isDataLoading && !isInitialLoading && examiners.length < 1) {
+    return <NoDataFound/>
+  }
 
   return (
     <div className="min-h-screen w-full pb-3 px-3 sm:px-4 xl:px-43 py-6 sm:mt-0 mb-10">
@@ -468,10 +251,6 @@ function DashboardPage() {
               Comprehensive overview of test performance and analytics
             </p>
           </div>
-          {/* <div className="hidden sm:flex items-center gap-2 text-gray-500">
-            {isMobile ? <Smartphone className="w-5 h-5" /> : <Monitor className="w-5 h-5" />}
-            <span className="text-sm">{isMobile ? 'Mobile' : isTablet ? 'Tablet' : 'Desktop'}</span>
-          </div> */}
         </div>
       </div>
 
@@ -514,18 +293,12 @@ function DashboardPage() {
           compact={isMobile}
         />
       </div>
-
-      {isDataLoading && <LoadingIndicator />}
-
-      {examiners.length === 0 ? (
-        <NoDataFound />
-      ) : (
         <>
           {/* Main Charts Row */}
           <div className="flex flex-col xl:flex-row rounded-lg overflow-x-auto mb-6 gap-4 sm:gap-6">
             {/* Monthly Area Chart */}
             <div className="w-full xl:w-2/3">
-              <Card className="h-full border-1 bg-white/80 backdrop-blur-sm rounded-2xl overflow-hidden">
+              <Card className="h-full border bg-white/80 backdrop-blur-sm rounded-2xl overflow-hidden">
                 <CardHeader className="pb-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
@@ -642,7 +415,7 @@ function DashboardPage() {
 
             {/* Department Donut Chart */}
             <div className="w-full xl:w-1/3">
-              <Card className="h-full border-1 bg-white/80 backdrop-blur-sm rounded-2xl overflow-hidden">
+              <Card className="h-full border bg-white/80 backdrop-blur-sm rounded-2xl overflow-hidden">
                 <CardHeader>
                   <CardTitle className="text-cyan-700 text-lg sm:text-xl">
                     Department Distribution
@@ -700,7 +473,7 @@ function DashboardPage() {
           {/* Additional Analytics Row */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6">
             {/* Weekly Performance Bar Chart */}
-            <Card className="border-1 bg-white/80 backdrop-blur-sm rounded-2xl overflow-hidden">
+            <Card className="border bg-white/80 backdrop-blur-sm rounded-2xl overflow-hidden">
               <CardHeader>
                 <CardTitle className="text-cyan-700 text-lg sm:text-xl">
                   Weekly Performance
@@ -772,7 +545,7 @@ function DashboardPage() {
             </Card>
 
             {/* NEW Score Distribution - Radial Bar Chart */}
-            <Card className="border-1 bg-white/80 backdrop-blur-sm rounded-2xl overflow-hidden">
+            <Card className="border bg-white/80 backdrop-blur-sm rounded-2xl overflow-hidden">
               <CardHeader>
                 <CardTitle className="text-cyan-700 text-lg sm:text-xl">
                   Score Distribution
@@ -865,7 +638,6 @@ function DashboardPage() {
             </Card>
           </div>
         </>
-      )}
     </div>
   );
 }

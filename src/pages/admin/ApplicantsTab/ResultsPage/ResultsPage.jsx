@@ -21,6 +21,7 @@ import {
 import { deleteExamineeTestResult, getAllResults } from "../../../../../api/api";
 import toast from "react-hot-toast";
 import ConfirmationModal from "@/components/ConfimationModal";
+import LoadingIndicator from "@/components/LoadingIndicator";
 
 function useMediaQuery(query) {
   const [matches, setMatches] = useState(false);
@@ -74,6 +75,8 @@ function ResultsPage() {
       const email = row.email?.toString().trim() || null;
       const name = row.examiner_name || row.name || "Unknown Examinee";
       const department = row.department || "No Department";
+
+      console.log(row)
 
       const attemptId =
         row.id || `${row.date || "unknown"}|${row.time || "unknown"}`;
@@ -746,13 +749,6 @@ function ResultsPage() {
     [expandedGroups, toggleGroupExpansion]
   );
 
-  const LoadingState = () => (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 flex flex-col items-center justify-center">
-      <div className="w-8 h-8 border-3 border-cyan-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-      <p className="text-gray-600 text-sm">Loading test results...</p>
-    </div>
-  );
-
   const EmptyState = () => (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 sm:p-12 flex flex-col items-center justify-center text-center">
       <div className="bg-gray-100 p-3 rounded-full mb-4">
@@ -977,8 +973,8 @@ function ResultsPage() {
 
           {/* Content Area */}
           {isLoading ? (
-            <LoadingState />
-          ) : groupedByExaminee.length === 0 ? (
+            <LoadingIndicator label={'Loading Tests Results ...'}/>
+          ) : !isLoading && groupedByExaminee.length === 0 ? (
             <EmptyState />
           ) : (
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">

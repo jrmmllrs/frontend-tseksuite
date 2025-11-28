@@ -1,11 +1,13 @@
 import { CircularProgress } from '@mui/material'
 import React from 'react'
-function LoadingIndicator() {
+function LoadingIndicator({
+  label
+}) {
   return (
-    <div className="flex flex-col items-center justify-center gap-3">
-            <CircularProgress />
-            <h6>Fetching Data ...</h6>
-    </div>
+     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 flex flex-col items-center justify-center">
+             <div className="w-8 h-8 border-3 border-cyan-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+             <p className="text-gray-600 text-sm">{label}</p>
+      </div>
   )
 }
 

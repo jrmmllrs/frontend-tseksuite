@@ -104,3 +104,80 @@ export const getQuestionTypeLabel = (type) => {
     return value !== null && value !== "";
   }).length;
 };
+
+
+ export const generateLast30DaysData = (isMobile, results) => {
+    const days = [];
+    const today = new Date();
+    const dataPoints = isMobile ? 15 : 30;
+
+    for (let i = dataPoints - 1; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(today.getDate() - i);
+
+      const dateString = isMobile 
+        ? date.toLocaleDateString("en-US", { day: "numeric" })
+        : date.toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+          });
+
+      days.push({
+        date: dateString,
+        COMPLETED: 0,
+        ABANDONED: 0,
+        fullDate: date.toISOString().split("T")[0],
+      });
+    }
+
+    // Populate with actual data
+    results.forEach((result) => {
+      const resultDate = new Date(result.created_at)
+        .toISOString()
+        .split("T")[0];
+      const dayData = days.find((day) => day.fullDate === resultDate);
+
+      if (dayData) {
+        if (result.status === "COMPLETED") {
+          dayData.COMPLETED += 1;
+        } else if (result.status === "ABANDONED") {
+          dayData.ABANDONED += 1;
+        }
+      }
+    });
+
+    return days;
+  };
+
+  export const generateWeeklyPerformance = (isMobile, results ) => {
+    const days = isMobile ? ["M", "T", "W", "T", "F", "S", "S"] : ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+    const weeklyData = days.map((day) => ({
+      day,
+      completed: 0,
+      abandoned: 0,
+      avgScore: 0,
+    }));
+
+    results.forEach((result) => {
+      const resultDate = new Date(result.created_at);
+      const dayIndex = (resultDate.getDay() + 6) % 7;
+
+      if (weeklyData[dayIndex]) {
+        if (result.status === "COMPLETED") {
+          weeklyData[dayIndex].completed += 1;
+          weeklyData[dayIndex].avgScore += result.score || 0;
+        } else if (result.status === "ABANDONED") {
+          weeklyData[dayIndex].abandoned += 1;
+        }
+      }
+    });
+
+    // Calculate average scores
+    weeklyData.forEach((day) => {
+      if (day.completed > 0) {
+        day.avgScore = Math.round(day.avgScore / day.completed);
+      }
+    });
+
+    return weeklyData;
+  };

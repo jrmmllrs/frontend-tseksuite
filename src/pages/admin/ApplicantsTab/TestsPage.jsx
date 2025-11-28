@@ -21,6 +21,7 @@ import {
  AlertCircle,
 } from "lucide-react";
 import ConfirmationModal from "@/components/ConfimationModal";
+import LoadingIndicator from "@/components/LoadingIndicator";
 
 
 function useMediaQuery(query) {
@@ -874,11 +875,8 @@ function TestsPage() {
 
          {/* Content */}
          {isDataLoading ? (
-           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 flex flex-col items-center justify-center">
-             <div className="w-8 h-8 border-3 border-cyan-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-             <p className="text-gray-600 text-sm">Loading examiners data...</p>
-           </div>
-         ) : groupedByExaminee.length === 0 ? (
+          <LoadingIndicator label={'Loading Examinees ...'}/>
+         ) : !isDataLoading && groupedByExaminee.length === 0 ? (
            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 sm:p-12 flex flex-col items-center justify-center text-center">
              <div className="bg-gray-100 p-3 rounded-full mb-4">
                <AlertCircle className="w-8 h-8 text-gray-400" />
