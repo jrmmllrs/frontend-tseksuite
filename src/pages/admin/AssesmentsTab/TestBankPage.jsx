@@ -167,7 +167,7 @@ const TestBankPage = () => {
     <div className="min-h-screen bg-white px-6 py-6 mb-17 sm:mb-0 sm:mt-0">
       <div className="max-w-7xl mx-auto">
         {/* Header Section */}
-        <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-8 mb-8">
+        <div className="bg-white p-0 rounded-3xl sm:sp-8 mb-8">
           {/* Header Section */}
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div className="flex items-start space-x-4">
@@ -197,7 +197,7 @@ const TestBankPage = () => {
           </div>
 
           {/* Search and Filter Section */}
-          <div className="mt-8 bg-gradient-to-r from-gray-50 to-blue-50/30 rounded-2xl p-6 border border-gray-200/50">
+          <div className="mt-8 bg-linear-to-r from-gray-50 to-blue-50/30 rounded-2xl p-6 border border-gray-200/50">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
               <div className="flex-1">
                 <div className="relative max-w-md">

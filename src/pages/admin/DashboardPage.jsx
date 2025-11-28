@@ -461,7 +461,7 @@ function DashboardPage() {
       <div className="mb-6 sm:mb-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-cyan-700 mb-2 tracking-tight">
+            <h1 className="text-2xl sm:text-3xl text-cyan-700 mb-2 tracking-tight">
               Dashboard
             </h1>
             <p className="text-gray-600 text-sm sm:text-base">
